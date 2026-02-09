@@ -1,5 +1,5 @@
 import React from 'react';
-import { RegulacaoData } from '../../../../types';
+import { RegulacaoData } from '../../../types';
 
 interface HeaderTabsProps {
     data?: RegulacaoData;
@@ -29,7 +29,7 @@ export function HeaderTabs({ data }: HeaderTabsProps) {
         'azul': 'bg-blue-500 border-blue-600',
         'neutro': 'bg-slate-300 border-slate-400'
     };
-    return map[data?.risk || data?.risco || 'amarelo'] || 'bg-yellow-300 border-yellow-400';
+    return map[data?.risco || 'amarelo'] || 'bg-yellow-300 border-yellow-400';
   };
 
   return (
