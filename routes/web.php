@@ -12,7 +12,7 @@ Route::prefix('tutoriais')->group(function () {
         Route::inertia('dashboard', 'dashboard')->name('dashboard');
 
         foreach (Area::cases() as $area) {
-            Route::inertia($area->value, 'area', ['titulo' => $area->label()])
+            Route::inertia($area->value, 'area', ['slug' => $area->value, 'titulo' => $area->label()])
                 ->middleware("area:{$area->value}")
                 ->name("area.{$area->value}");
         }
