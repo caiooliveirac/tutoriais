@@ -1,100 +1,144 @@
 import { Head } from '@inertiajs/react';
+import {
+    Equipe,
+    Protocolo,
+    RiscoBolinha,
+    StatusOcorrencia,
+} from '@/components/samu/celulas';
 import type { Coluna } from '@/components/samu/tabela-ocorrencias';
 import { TabelaOcorrencias } from '@/components/samu/tabela-ocorrencias';
+import type { Linha } from '@/types';
 
 type Tabela = { titulo: string; colunas: Coluna[]; grid: string };
 
-const triagem: Tabela = {
-    titulo: 'Triagem',
-    grid: 'grid-cols-[110px_50px_80px_90px_1fr_1fr_1fr_1fr_1fr_2fr_1fr_50px_140px]',
-    colunas: [
-        { titulo: 'Protocolo' },
-        { titulo: 'Status', className: 'text-center' },
-        { titulo: 'Data' },
-        { titulo: 'Telefone' },
-        { titulo: 'Médico' },
-        { titulo: 'TARM' },
-        { titulo: 'Cidade' },
-        { titulo: 'Bairro' },
-        { titulo: 'Solicitante' },
-        { titulo: 'Queixa' },
-        { titulo: 'Tipo unidade' },
-        { titulo: 'Risco', className: 'text-center' },
-        { titulo: 'Status da ocorrência', className: 'text-right' },
-    ],
-};
+const c = {
+    protocolo: {
+        titulo: 'Protocolo',
+        celula: (l: Linha) => <Protocolo linha={l} />,
+    },
+    hora: { titulo: 'Hora', celula: (l: Linha) => l.hora },
+    telefone: { titulo: 'Telefone', celula: (l: Linha) => l.telefone },
+    medico: { titulo: 'Médico', celula: (l: Linha) => l.medico ?? '---' },
+    tarm: { titulo: 'TARM', celula: (l: Linha) => l.tarm },
+    cidade: { titulo: 'Cidade', celula: (l: Linha) => l.cidade },
+    bairro: { titulo: 'Bairro', celula: (l: Linha) => l.bairro },
+    solicitante: { titulo: 'Solicitante', celula: (l: Linha) => l.solicitante },
+    queixa: { titulo: 'Queixa', celula: (l: Linha) => l.queixa },
+    recurso: {
+        titulo: 'Tipo unidade',
+        celula: (l: Linha) => l.tipo_recurso ?? '',
+    },
+    risco: {
+        titulo: 'Risco',
+        className: 'text-center',
+        celula: (l: Linha) => <RiscoBolinha risco={l.risco} />,
+    },
+    status: {
+        titulo: 'Status da ocorrência',
+        className: 'text-right whitespace-normal',
+        celula: (l: Linha) => <StatusOcorrencia linha={l} />,
+    },
+    equipe: {
+        titulo: 'Equipe',
+        className: 'overflow-visible',
+        celula: (l: Linha) => <Equipe linha={l} />,
+    },
+} satisfies Record<string, Coluna>;
 
-const regulacao: Tabela = {
-    titulo: 'Regulação',
-    grid: 'grid-cols-[100px_40px_80px_1fr_1fr_1fr_2fr_170px_50px_160px]',
-    colunas: [
-        { titulo: 'Protocolo' },
-        { titulo: 'Status', className: 'text-center' },
-        { titulo: 'Data' },
-        { titulo: 'Cidade' },
-        { titulo: 'Bairro' },
-        { titulo: 'Médico' },
-        { titulo: 'Queixa' },
-        { titulo: 'Equipe', className: 'text-right pr-6' },
-        { titulo: 'Risco', className: 'text-center' },
-        { titulo: 'Status da ocorrência', className: 'text-right pr-2' },
-    ],
-};
-
-const despacho: Tabela = {
-    titulo: 'Aguardando despacho',
-    grid: 'grid-cols-[110px_80px_1fr_1fr_2fr_50px_140px_160px]',
-    colunas: [
-        { titulo: 'Protocolo' },
-        { titulo: 'Data' },
-        { titulo: 'Cidade' },
-        { titulo: 'Bairro' },
-        { titulo: 'Queixa' },
-        { titulo: 'Risco', className: 'text-center' },
-        { titulo: 'Médico' },
-        { titulo: 'Recurso (USA/USB/Moto)', className: 'text-right' },
-    ],
-};
-
-const chamados: Tabela = {
-    titulo: 'Meus chamados',
-    grid: 'grid-cols-[110px_80px_90px_1fr_1fr_1fr_2fr_140px]',
-    colunas: [
-        { titulo: 'Protocolo' },
-        { titulo: 'Data' },
-        { titulo: 'Telefone' },
-        { titulo: 'Solicitante' },
-        { titulo: 'Cidade' },
-        { titulo: 'Bairro' },
-        { titulo: 'Queixa' },
-        { titulo: 'Status', className: 'text-right' },
-    ],
-};
-
-const tabelasPorArea: Record<string, Tabela[]> = {
-    atendimento: [chamados],
-    triagem: [triagem, regulacao],
-    despacho: [despacho, regulacao],
-    plantao: [triagem, despacho, regulacao],
-    bi: [],
+const tabelas: Record<string, Tabela> = {
+    chamados: {
+        titulo: 'Meus chamados',
+        grid: 'grid-cols-[120px_70px_110px_1fr_1fr_2fr_50px_170px]',
+        colunas: [
+            c.protocolo,
+            c.hora,
+            c.telefone,
+            c.solicitante,
+            c.bairro,
+            c.queixa,
+            c.risco,
+            c.status,
+        ],
+    },
+    triagem: {
+        titulo: 'Triagem',
+        grid: 'grid-cols-[120px_70px_110px_1fr_1fr_1fr_1fr_2fr_50px_170px]',
+        colunas: [
+            c.protocolo,
+            c.hora,
+            c.telefone,
+            c.medico,
+            c.tarm,
+            c.bairro,
+            c.solicitante,
+            c.queixa,
+            c.risco,
+            c.status,
+        ],
+    },
+    despacho: {
+        titulo: 'Aguardando despacho',
+        grid: 'grid-cols-[120px_70px_1fr_1fr_2fr_90px_50px_170px]',
+        colunas: [
+            c.protocolo,
+            c.hora,
+            c.bairro,
+            c.medico,
+            c.queixa,
+            c.recurso,
+            c.risco,
+            c.status,
+        ],
+    },
+    regulacao: {
+        titulo: 'Regulação',
+        grid: 'grid-cols-[120px_70px_1fr_1fr_2fr_130px_50px_180px]',
+        colunas: [
+            c.protocolo,
+            c.hora,
+            c.bairro,
+            c.medico,
+            c.queixa,
+            c.equipe,
+            c.risco,
+            c.status,
+        ],
+    },
+    encerradas: {
+        titulo: 'Encerradas (12h)',
+        grid: 'grid-cols-[120px_70px_1fr_1fr_2fr_50px_220px]',
+        colunas: [
+            c.protocolo,
+            c.hora,
+            c.bairro,
+            c.medico,
+            c.queixa,
+            c.risco,
+            c.status,
+        ],
+    },
 };
 
 export default function Area({
-    slug,
     titulo,
+    tabelas: dados,
 }: {
-    slug: string;
     titulo: string;
+    tabelas: Record<string, Linha[]>;
 }) {
-    const tabelas = tabelasPorArea[slug] ?? [];
+    const chaves = Object.keys(dados);
 
     return (
         <>
             <Head title={titulo} />
-            {tabelas.map((tabela) => (
-                <TabelaOcorrencias key={tabela.titulo} {...tabela} />
+            {chaves.map((chave) => (
+                <TabelaOcorrencias
+                    key={chave}
+                    {...tabelas[chave]}
+                    linhas={dados[chave]}
+                />
             ))}
-            {tabelas.length === 0 && (
+            {chaves.length === 0 && (
                 <p className="py-10 text-center text-sm text-neutral-500">
                     {titulo}: em construção.
                 </p>

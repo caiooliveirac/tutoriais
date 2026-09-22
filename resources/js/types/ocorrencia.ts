@@ -1,0 +1,25 @@
+export type Linha = {
+    id: number;
+    protocolo: string;
+    status: string;
+    status_label: string;
+    data: string;
+    hora: string;
+    telefone: string;
+    solicitante: string;
+    cidade: string;
+    bairro: string;
+    queixa: string;
+    tarm: string;
+    medico: string | null;
+    risco: string | null;
+    decisao_medica: string | null;
+    tipo_recurso: string | null;
+    solicitado_envio_hora: string | null;
+    unidade: string | null;
+    despachada_hora: string | null;
+    unidade_desvinculada: boolean;
+    hospital: string | null;
+    intercorrencia: string | null;
+    travada_por: string | null;
+};

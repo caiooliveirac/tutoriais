@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\Area;
+use App\Http\Controllers\PainelController;
 use Illuminate\Support\Facades\Route;
 
 // O app vive em mnrs.com.br/tutoriais: todas as rotas carregam o prefixo,
@@ -12,7 +13,8 @@ Route::prefix('tutoriais')->group(function () {
         Route::inertia('dashboard', 'dashboard')->name('dashboard');
 
         foreach (Area::cases() as $area) {
-            Route::inertia($area->value, 'area', ['slug' => $area->value, 'titulo' => $area->label()])
+            Route::get($area->value, PainelController::class)
+                ->defaults('area', $area->value)
                 ->middleware("area:{$area->value}")
                 ->name("area.{$area->value}");
         }

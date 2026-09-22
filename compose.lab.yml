@@ -1,0 +1,38 @@
+# LAB no magalu: mesmo Dockerfile/código do LIVE, banco próprio com o
+# plantão fictício (LabSeeder). Porta = LIVE + 1000, só localhost
+# (acesso pelo túnel: ssh -fN magalu-lab → http://localhost:4099/tutoriais).
+#   docker compose -f compose.lab.yml up -d --build
+#   docker compose -f compose.lab.yml exec app php artisan migrate:fresh --seed --seeder=LabSeeder --force
+name: tutoriais-lab
+
+services:
+    app:
+        build: .
+        restart: unless-stopped
+        env_file: .env # no checkout do LAB (~/lab/tutoriais) o .env é o do LAB
+        ports:
+            - '127.0.0.1:4099:80'
+        volumes:
+            - storage:/app/storage
+        depends_on:
+            db:
+                condition: service_healthy
+
+    db:
+        image: mariadb:11.8
+        restart: unless-stopped
+        environment:
+            MARIADB_DATABASE: ${DB_DATABASE}
+            MARIADB_USER: tutoriais
+            MARIADB_PASSWORD: ${DB_PASSWORD}
+            MARIADB_RANDOM_ROOT_PASSWORD: '1'
+        volumes:
+            - db:/var/lib/mysql
+        healthcheck:
+            test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
+            interval: 5s
+            retries: 20
+
+volumes:
+    storage:
+    db:

@@ -9,8 +9,8 @@ use Illuminate\Database\Seeder;
 class DatabaseSeeder extends Seeder
 {
     /**
-     * Usuários de demonstração, um por perfil. Senhas fáceis de propósito:
-     * o sistema só contém dados fictícios.
+     * Usuários de demonstração (um por perfil) e catálogos. Senhas fáceis
+     * de propósito: o sistema só contém dados fictícios.
      */
     public function run(): void
     {
@@ -34,5 +34,7 @@ class DatabaseSeeder extends Seeder
                 ],
             );
         }
+
+        $this->call(CatalogoSeeder::class);
     }
 }

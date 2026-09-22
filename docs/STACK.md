@@ -14,8 +14,8 @@ Status de cada item: **DECIDIDO** ou **PENDENTE** (decisão do usuário).
 | Banco        | MariaDB 11.8 LTS (sempre: dev, LAB e LIVE). `DATETIME(6)` em UTC, exibição em `America/Bahia` | DECIDIDO |
 | Frontend     | Inertia + React (starter kit React do Laravel 13)                                             | DECIDIDO |
 | Autenticação | Starter kit oficial do Laravel 13 (inclui login, reset, 2FA)                                  | DECIDIDO |
-| Tempo real   | Laravel Reverb + Echo (tabelas atualizam entre usuários sem recarregar)                       | DECIDIDO |
-| Filas        | driver `database` (sem Redis até precisar)                                                    | DECIDIDO |
+| Tempo real   | Laravel Reverb + Echo, em fases (ver §8)                                                      | DECIDIDO |
+| Filas        | `database` agora; Redis + Horizon quando os gatilhos do §8 aparecerem                         | DECIDIDO |
 | Agendador    | `schedule:run` — dispara intercorrências da simulação                                         | DECIDIDO |
 | Testes       | Pest (feature test por transição de estado e por permissão)                                   | DECIDIDO |
 | Qualidade    | Pint (estilo) + Larastan (análise estática) no CI                                             | DECIDIDO |
@@ -68,13 +68,16 @@ Tudo registrado com usuário, perfil (área de origem), IP e horário com segund
 
 ## 4. Domínio (herdado do mock)
 
-- Triagem: `AGUARDANDO_TRIAGEM` → `SOLICITADO_ENVIO` | `CANCELADO`; trava de ficha
-  (`locked_by`, `locked_at`).
-- Regulação: `AGUARDANDO_RETORNO` → `PROCURANDO_RECURSO` → `REGULADO`.
-- Intercorrências: evasão, recusa, problema mecânico, piora, QTA.
-- Entidades: Ocorrência, Vítima (1:N), Unidade (tipo: USA, USB, MOTO), Hospital, Usuário.
-- Fluxo: TARM abre → médico tria e decide → despacho (enfermeiro/rádio-operador) envia recurso → equipe retorna → médico regula destino.
-- Dados **sempre fictícios** (factories com Faker pt_BR). Nunca dado real de paciente.
+Levantamento completo em `docs/DOMINIO.md`. Resumo:
+
+- Status único `StatusOcorrencia`: aguardando triagem → solicitado envio →
+  aguardando retorno → procurando recurso → regulado → finalizada; saídas
+  laterais cancelado e encerrado sem envio.
+- Entidades: `ocorrencias`, `vitimas` (1:N, com sinais vitais), `unidades`
+  (USA/USB/Moto), `hospitais`, `users`; linha do tempo em `eventos_ocorrencia`.
+- Ficha travada: `travada_por`, `travada_em`.
+- Dados **sempre fictícios**. O LAB usa o `LabSeeder` (nomes gerados de listas
+  próprias, sem Faker, porque roda na mesma imagem de produção).
 
 ## 5. BI (perfil Administrativo)
 
@@ -89,12 +92,16 @@ Tudo registrado com usuário, perfil (área de origem), IP e horário com segund
 - **Onde**: Mac local (ver §7). Exceção consciente à regra
   do LAB residente no magalu enquanto o app nasce.
 - **Banco no dev**: MariaDB — pode rodar em container desde já, não afeta o reload.
-- **Docker só no LIVE**: `Dockerfile` (FrankenPHP PHP 8.5, build com Node 26)
-    - `compose.yaml` (app + `mariadb:11.8`), em `/home/ubuntu/tutoriais` no
-      magalu, porta `127.0.0.1:3099` (a mesma que o nginx já apontava).
-      Promoção: `labctl promote tutoriais`. Migrations rodam à mão
-      (`docker compose exec app php artisan migrate --force`), nunca no promote.
-      Fila, scheduler e Reverb entram como serviços do compose quando forem usados.
+- **Docker em LIVE e LAB**, mesma imagem (`Dockerfile`: FrankenPHP PHP 8.5,
+  build com Node 26), bancos diferentes:
+    - LIVE: `compose.yaml` em `/home/ubuntu/tutoriais`, porta `127.0.0.1:3099`
+      (a que o nginx de `/tutoriais/` já aponta). Banco só com usuários demo e
+      catálogos (`DatabaseSeeder`). Promoção: `labctl promote tutoriais`.
+    - LAB: `compose.lab.yml` em `/home/ubuntu/lab/tutoriais`, porta
+      `127.0.0.1:4099`, banco `tutoriais_lab` com o plantão fictício
+      (`LabSeeder`). Acesso pelo túnel: `http://localhost:4099/tutoriais`.
+    - Migrations rodam à mão (`docker compose exec app php artisan migrate --force`),
+      nunca no promote. No LAB, `migrate:fresh --seed --seeder=LabSeeder` recria o plantão.
 - **Subpath**: todas as rotas têm prefixo literal `tutoriais` (`routes/web.php`,
   `fortify.prefix`), para que o Wayfinder gere URLs certas. Assets do Vite em
   `public/tutoriais/build`; cookie de sessão com `SESSION_PATH=/tutoriais`.
@@ -119,3 +126,43 @@ O Docker do LIVE deve reproduzir exatamente isto. Mudou aqui, muda lá.
 Banco no dev: charset `utf8mb4`; `time_zone` do servidor = SYSTEM, a aplicação
 grava UTC (`config/app.php` timezone `UTC` + `timezone => +00:00` na conexão `mariadb`).
 PATH no `~/.zshrc`: `~/.composer/vendor/bin` e `/opt/homebrew/opt/mariadb@11.8/bin`.
+
+## 8. Tempo real, filas, Redis e Horizon — estratégia
+
+Ponto de partida: resposta do GPT trazida pelo usuário (2026-09-22). O que
+adotamos, o que adaptamos e o que recusamos:
+
+| Proposta                                                                 | Decisão                                                                                          |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| Dev nativo, Docker cedo no repositório                                   | Já é assim (LIVE e LAB em Docker desde o dia 1).                                                 |
+| PostgreSQL                                                               | **Recusado.** MariaDB sempre. JSON do MariaDB e `DATETIME(6)` cobrem auditoria e linha do tempo. |
+| Actions + Events + Policies + máquina de estados, sem controller gigante | **Adotado** a partir do primeiro fluxo de escrita (ver abaixo).                                  |
+| Tabela de eventos como linha do tempo                                    | Já existe: `eventos_ocorrencia`, append-only com trigger.                                        |
+| Redis e Horizon no dia 1                                                 | Adiado com gatilho explícito (fases 2 e 3).                                                      |
+| Uma imagem, vários processos (app, queue, reverb, scheduler)             | **Adotado**: serviços do mesmo `Dockerfile` no compose, mudando só o `command`.                  |
+
+### Organização do código de escrita
+
+```
+Controller (fino)  →  Action (app/Actions/Ocorrencia/*)  →  modelo + evento em eventos_ocorrencia
+                           │  valida transição em StatusOcorrencia
+                           │  autoriza por Policy (perfil/área)
+                           └► dispara Event de domínio (ex.: UnidadeDespachada)
+                                   └► ShouldBroadcast (fase 1)
+```
+
+Tudo numa transação; o broadcast só sai depois do commit
+(`ShouldDispatchAfterCommit`), para ninguém ver estado que foi desfeito.
+
+### Fases
+
+| Fase      | Gatilho                                                                                                    | Entra                                   | Como                                                                                                                                                                                                                                                                                                             |
+| --------- | ---------------------------------------------------------------------------------------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0 (agora) | —                                                                                                          | Fila, cache e sessão no MariaDB         | `QUEUE_CONNECTION=database`. As listas podem usar `usePoll` do Inertia (ex.: 10 s) como ponte até o WebSocket.                                                                                                                                                                                                   |
+| 1         | Primeiro fluxo multiusuário pronto (despacho: médico decide → fila do despacho muda na tela do enfermeiro) | **Reverb + Echo** (WS) e worker de fila | Serviços `reverb` (`php artisan reverb:start`) e `queue` (`php artisan queue:work`) no compose, mesma imagem. Canais privados `area.{slug}` (autorizados pela mesma regra de área) e `ocorrencia.{id}`. nginx: `location /tutoriais/app` com upgrade de WebSocket para o Reverb. Eventos broadcast enfileirados. |
+| 2         | Fila com atraso perceptível, >1 instância do Reverb, ou locks/caches concorrentes pesando no banco         | **Redis**                               | Serviço `redis` no compose (dev: `brew install redis`). `QUEUE_CONNECTION=redis`, `CACHE_STORE=redis`, `REVERB_SCALING_ENABLED=true` (pub/sub entre instâncias). Sessão continua no banco (auditoria de acesso).                                                                                                 |
+| 3         | Fila em Redis com jobs de naturezas diferentes (broadcast, simulação, relatórios de BI, notificações)      | **Horizon**                             | Substitui o `queue:work` pelo `php artisan horizon`; painel em `/tutoriais/horizon`, liberado só para chefe de plantão e administrativo. Filas separadas por prioridade: `broadcast` > `default` > `relatorios`.                                                                                                 |
+| —         | Simulação automática de intercorrências (modo tutorial)                                                    | **Scheduler**                           | Serviço `scheduler` (`php artisan schedule:work`) disparando Jobs de cenário; só no LAB até decidir o contrário.                                                                                                                                                                                                 |
+
+O que continua síncrono de propósito: gravação da ocorrência e do evento de
+auditoria (tem que falhar junto com a requisição, nunca "depois").
