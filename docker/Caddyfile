@@ -1,0 +1,22 @@
+{
+	frankenphp
+	auto_https off
+}
+
+:80 {
+	root * /app/public
+	encode zstd gzip
+
+	# Estáticos do Vite e ícones; todo o resto vai para o Laravel.
+	@static path /tutoriais/build/* /tutoriais/favicon.ico /tutoriais/favicon.svg /tutoriais/apple-touch-icon.png /robots.txt
+	handle @static {
+		header /tutoriais/build/assets/* Cache-Control "public, max-age=31536000, immutable"
+		file_server
+	}
+
+	handle {
+		php_server {
+			try_files index.php
+		}
+	}
+}
