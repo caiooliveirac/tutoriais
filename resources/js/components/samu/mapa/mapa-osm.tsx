@@ -14,6 +14,7 @@ export function MapaOsm({
     estimativa,
     arredores,
     ruas,
+    centro,
     onMarcar,
 }: PropsMapa) {
     const elemento = useRef<HTMLDivElement>(null);
@@ -125,6 +126,13 @@ export function MapaOsm({
     }, []);
 
     useEffect(() => redesenhar.current(), [bases, estimativa, arredores, ruas]);
+
+    useEffect(() => {
+        if (mapa.current && centro && !ponto) {
+            mapa.current.setView(centro, 15);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [centro]);
 
     useEffect(() => {
         const L = leaflet.current;

@@ -11,3 +11,4 @@ Publicado em `mnrs.com.br/tutoriais`.
 - LIVE `compose.yaml` (3099) e LAB `compose.lab.yml` (4099): mesma imagem, bancos diferentes. Estratégia Reverb/Redis/Horizon: `docs/STACK.md` §8.
 - TARM: `pages/atendimento.tsx` + `components/samu/atendimento/*`. Mapas em `app/Services/Mapas` (Google com as 2 chaves, senão OSM; ruas sempre Overpass). Rotas: OSRM. API de rastreamento e estimativa: `docs/API.md`. Bases oficiais com coordenadas: `CatalogoSeeder`.
 - Dev: `server.php` na raiz existe porque `public/tutoriais/` (assets) colidia com a rota `/tutoriais` no `artisan serve`.
+- Catálogo local de ruas/lugares (OSM → MariaDB): `php artisan osm:baixar` gera `database/data/osm-salvador.json.gz`; `MapaSeeder` carrega (fora dos testes). Detalhes: `docs/API.md`.

@@ -54,6 +54,7 @@ export function MapaGoogle({
     estimativa,
     arredores,
     ruas,
+    centro,
     onMarcar,
 }: PropsMapa & { chave: string }) {
     const elemento = useRef<HTMLDivElement>(null);
@@ -172,6 +173,14 @@ export function MapaGoogle({
             );
         }
     }, [pronto, bases, estimativa, arredores, ruas]);
+
+    useEffect(() => {
+        if (pronto && mapa.current && centro && !ponto) {
+            mapa.current.panTo({ lat: centro[0], lng: centro[1] });
+            mapa.current.setZoom(15);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pronto, centro]);
 
     useEffect(() => {
         if (!pronto || !mapa.current || !ponto) {

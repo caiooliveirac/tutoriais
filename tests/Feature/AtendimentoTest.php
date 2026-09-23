@@ -87,7 +87,7 @@ test('protocolos do dia são sequenciais', function () {
 
 test('abertura valida os campos obrigatórios', function () {
     $this->actingAs($this->tarm)->post('/tutoriais/atendimento/ocorrencias', ['vitimas' => []])
-        ->assertSessionHasErrors(['telefone', 'solicitante', 'endereco', 'bairro', 'queixa', 'vitimas']);
+        ->assertSessionHasErrors(['endereco', 'queixa', 'vitimas']);
 });
 
 test('só quem tem perfil de TARM abre ocorrência', function () {

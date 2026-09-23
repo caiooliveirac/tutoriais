@@ -12,11 +12,13 @@ class AbrirOcorrenciaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'telefone' => ['required', 'string', 'max:20'],
-            'solicitante' => ['required', 'string', 'max:120'],
+            // Só a queixa e alguma pista do local são obrigatórias: com
+            // solicitante leigo, nada pode impedir o TARM de abrir o chamado.
+            'telefone' => ['nullable', 'string', 'max:20'],
+            'solicitante' => ['nullable', 'string', 'max:120'],
             'cidade' => ['required', 'string', 'max:80'],
-            'bairro' => ['required', 'string', 'max:80'],
-            'endereco' => ['required', 'string', 'max:200'],
+            'bairro' => ['nullable', 'string', 'max:80'],
+            'endereco' => ['nullable', 'string', 'max:200', 'required_without_all:bairro,ponto_referencia,lat'],
             'ponto_referencia' => ['nullable', 'string', 'max:200'],
             'queixa' => ['required', 'string', 'max:200'],
             'lat' => ['nullable', 'numeric', 'between:-13.2,-12.6', 'required_with:lng'],
@@ -33,11 +35,22 @@ class AbrirOcorrenciaRequest extends FormRequest
     /**
      * @return array<string, string>
      */
+    public function messages(): array
+    {
+        return [
+            'endereco.required_without_all' => 'Informe pelo menos uma pista do local: endereço, bairro, ponto de referência ou um clique no mapa.',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
     public function attributes(): array
     {
         return [
             'ponto_referencia' => 'ponto de referência',
             'endereco' => 'endereço',
+            'bairro' => 'bairro',
             'vitimas.*.idade' => 'idade',
             'lat' => 'localização no mapa',
         ];

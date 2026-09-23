@@ -36,5 +36,10 @@ class DatabaseSeeder extends Seeder
         }
 
         $this->call(CatalogoSeeder::class);
+
+        // ~30 mil ruas e lugares: fora dos testes, que semeiam um mapa pequeno próprio.
+        if (! app()->runningUnitTests()) {
+            $this->call(MapaSeeder::class);
+        }
     }
 }

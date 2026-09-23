@@ -2,8 +2,6 @@
 
 namespace App\Services\Mapas;
 
-use Illuminate\Support\Str;
-
 /**
  * Bairros de Salvador (database/data/bairros-salvador.json) com busca
  * tolerante a erro de digitação: o TARM escreve como ouve ("toróro",
@@ -47,18 +45,9 @@ class Bairros
             ->first()['nome'];
     }
 
-    /**
-     * Forma "falada" do nome: sem acento, sem letra muda, com as trocas mais
-     * comuns de quem escreve de ouvido (ss/ç/z/c→s, qu→k, lh→li, y→i...).
-     */
     public static function som(string $texto): string
     {
-        $t = Str::lower(Str::ascii($texto));
-        $t = preg_replace('/[^a-z]/', '', $t) ?? '';
-        $t = strtr($t, ['y' => 'i', 'w' => 'v', 'k' => 'c']);
-        $t = preg_replace(['/ch|sh|x/', '/lh/', '/nh/', '/qu|q|c(?=[aou])|ck/', '/c(?=[ei])|ss|z|ç/', '/h/', '/(.)\1+/', '/[aeiou]+$/'], ['x', 'li', 'ni', 'k', 's', '', '$1', ''], $t) ?? '';
-
-        return $t;
+        return Fonetica::som($texto);
     }
 
     /**

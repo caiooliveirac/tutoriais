@@ -44,3 +44,6 @@ yarn-error.log
 
 # credenciais demo (local)
 /credenciais-demo.txt
+
+# osm:importar (recortes temporários)
+/storage/app/osm

@@ -23,7 +23,22 @@ class Osm
         'car_repair' => 'oficina', 'police' => 'polícia', 'fire_station' => 'bombeiros', 'bus_station' => 'rodoviária',
         'park' => 'praça', 'playground' => 'parquinho', 'pitch' => 'campo/quadra', 'sports_centre' => 'ginásio',
         'hairdresser' => 'salão', 'mall' => 'shopping', 'community_centre' => 'associação', 'townhall' => 'prefeitura',
+        'variety_store' => 'loja de variedades', 'clothes' => 'loja de roupas', 'beauty' => 'salão de beleza',
+        'dentist' => 'dentista', 'hotel' => 'hotel', 'bus_stop' => 'ponto de ônibus', 'platform' => 'ponto de ônibus',
+        'station' => 'estação', 'stop_position' => 'ponto de ônibus', 'car_wash' => 'lava-jato', 'hardware' => 'material de construção',
+        'mobile_phone' => 'loja de celular', 'optician' => 'ótica', 'ice_cream' => 'sorveteria', 'post_office' => 'correios',
+        'social_facility' => 'assistência social', 'nightclub' => 'boate', 'stadium' => 'estádio', 'library' => 'biblioteca',
+        'greengrocer' => 'hortifruti', 'bicycle' => 'bicicletaria', 'car' => 'concessionária', 'motorcycle' => 'loja de motos',
+        'laundry' => 'lavanderia', 'pet' => 'pet shop', 'veterinary' => 'veterinário', 'government' => 'órgão público',
     ];
+
+    /** "amenity=place_of_worship" → "igreja". */
+    public static function traduzirTipo(string $tag): string
+    {
+        $valor = str_contains($tag, '=') ? explode('=', $tag, 2)[1] : $tag;
+
+        return self::TIPOS[$valor] ?? str_replace('_', ' ', $valor);
+    }
 
     /**
      * @return list<array{id: string, principal: string, secundario: string, lat: float, lng: float, bairro: ?string, logradouro: ?string, numero: ?string}>
@@ -119,7 +134,7 @@ class Osm
             $tags = $e['tags'];
             $referencias[] = [
                 'nome' => (string) $tags['name'],
-                'tipo' => self::TIPOS[$tipo = (string) ($tags['amenity'] ?? $tags['shop'] ?? $tags['leisure'] ?? $tags['tourism'] ?? $tags['healthcare'] ?? '')] ?? str_replace('_', ' ', $tipo),
+                'tipo' => self::traduzirTipo((string) ($tags['amenity'] ?? $tags['shop'] ?? $tags['leisure'] ?? $tags['tourism'] ?? $tags['healthcare'] ?? '')),
                 'lat' => (float) $p['lat'],
                 'lng' => (float) $p['lon'],
                 'metros' => Geo::metros($lat, $lng, (float) $p['lat'], (float) $p['lon']),

@@ -6,6 +6,8 @@ export type PropsMapa = {
     estimativa: Estimativa | null;
     arredores: Arredores | null;
     ruas: Rua[];
+    // centro do bairro informado: o mapa vai até lá antes de haver local marcado
+    centro: [number, number] | null;
     onMarcar: (lat: number, lng: number) => void;
 };
 

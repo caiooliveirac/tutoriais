@@ -1,0 +1,357 @@
+{
+    "_": "Casos difíceis para `php artisan mapas:avaliar`: o que o TARM digitaria ouvindo um solicitante leigo (erro de grafia, sem acento, abreviação, número por extenso, bairro errado ou vazio) × o gabarito, que existe no catálogo OSM. `nota` explica a dificuldade.",
+    "casos": [
+        {
+            "tipo": "rua",
+            "digitado": "rua mestre binba",
+            "bairro": "nordeste",
+            "espera": "Rua Mestre Bimba",
+            "espera_bairro": "Nordeste de Amaralina",
+            "nota": "m/n trocado, bairro abreviado"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "rua do nordeste",
+            "bairro": "nordeste de amaralina",
+            "espera": "Rua do Nordeste",
+            "espera_bairro": "Nordeste de Amaralina",
+            "nota": "homônima"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "rua curassa",
+            "bairro": "liberdade",
+            "espera": "Rua Curaçá",
+            "espera_bairro": "Liberdade",
+            "nota": "ç escrito ss, sem acento"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "rua gengibira",
+            "bairro": "liberdadi",
+            "espera": "Rua Gengibirra de Cirria",
+            "espera_bairro": "Liberdade",
+            "nota": "nome longo pela metade, bairro com erro"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "rua coronel tupi caldas",
+            "bairro": "liberdade",
+            "espera": "Rua Coronel Tupy Caldas",
+            "espera_bairro": "Liberdade",
+            "nota": "y virou i"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "rua macarani",
+            "bairro": "pernambues",
+            "espera": "Rua Macarani",
+            "espera_bairro": "Pernambués",
+            "nota": "sem acento no bairro"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "rua 14 de agosto",
+            "bairro": "pernambues",
+            "espera": "Rua 14 de Agosto",
+            "espera_bairro": "Pernambués",
+            "nota": "nome com número"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "rua quatorze de agosto",
+            "bairro": "pernambues",
+            "espera": "Rua 14 de Agosto",
+            "espera_bairro": "Pernambués",
+            "nota": "número falado por extenso"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "rua silvo santos",
+            "bairro": "susuarana",
+            "espera": "Rua Silvio Santos",
+            "espera_bairro": "Sussuarana",
+            "nota": "letra faltando nos dois"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "rua irenio sousa",
+            "bairro": "sussuarana",
+            "espera": "Rua Irênio Souza",
+            "espera_bairro": "Sussuarana",
+            "nota": "z/s"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "rua ubiratam",
+            "bairro": "brotas",
+            "espera": "Rua Ubiratan",
+            "espera_bairro": "Brotas",
+            "nota": "n/m final"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "rua rio branco",
+            "bairro": "brotas",
+            "espera": "Rua Rio Branco",
+            "espera_bairro": "Brotas",
+            "nota": "homônima em 3 lugares"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "ladeira do hospital geral",
+            "bairro": "brotas",
+            "espera": "Ladeira do Hospital Geral",
+            "espera_bairro": "Brotas",
+            "nota": "tipo ladeira"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "rua brasilia",
+            "bairro": "itapoa",
+            "espera": "Rua Brasília",
+            "espera_bairro": "Itapuã",
+            "nota": "homônima em 5 lugares, bairro errado"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "praça dorival caime",
+            "bairro": "itapua",
+            "espera": "Praça Dorival Caymmi",
+            "espera_bairro": "Itapuã",
+            "nota": "grafia de ouvido"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "rua rafael pastore",
+            "bairro": "itapua",
+            "espera": "Rua Rafael Pastore Neto",
+            "espera_bairro": "Itapuã",
+            "nota": "nome incompleto"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "rua angola",
+            "bairro": "lobato",
+            "espera": "Rua Angola",
+            "espera_bairro": "Lobato",
+            "nota": "homônima"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "rua aiti",
+            "bairro": "lobato",
+            "espera": "Rua Haiti",
+            "espera_bairro": "Lobato",
+            "nota": "h mudo"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "rua machado de assis",
+            "bairro": "bairro da paz",
+            "espera": "Rua Machado de Assis",
+            "espera_bairro": "Bairro da Paz",
+            "nota": "homônima em 3 lugares"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "travessa bahia",
+            "bairro": "valeria",
+            "espera": "Travessa Bahia",
+            "espera_bairro": "Valéria",
+            "nota": "homônima em 4 lugares"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "rua dos coqueiro",
+            "bairro": "engenho velho da federacao",
+            "espera": "Rua dos Coqueiros",
+            "espera_bairro": "Engenho Velho da Federação",
+            "nota": "plural perdido, homônima em 5"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "travessa oito de dezembro",
+            "bairro": "uruguai",
+            "espera": "Travessa 8 de Dezembro",
+            "espera_bairro": "Uruguai",
+            "nota": "número falado por extenso, homônima"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "rua gonsalo coelho",
+            "bairro": "boca do rio",
+            "espera": "Rua Gonçalo Coelho",
+            "espera_bairro": "Boca do Rio",
+            "nota": "ç escrito s"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "rua jaime simas",
+            "bairro": "boca do rio",
+            "espera": "Rua Jaime Simas",
+            "espera_bairro": "Boca do Rio",
+            "nota": "fácil (controle)"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "avenida acm",
+            "bairro": null,
+            "espera": "Avenida Antônio Carlos Magalhães",
+            "espera_bairro": null,
+            "nota": "sigla popular"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "rua direta da gomeia",
+            "bairro": "calabetao",
+            "espera": "Rua Direta da Gomeia",
+            "espera_bairro": "Calabetão",
+            "nota": "homônima em bairros vizinhos"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "rua direta do arraial",
+            "bairro": "sao goncalo",
+            "espera": "Rua Direta do Arraial",
+            "espera_bairro": "São Gonçalo do Retiro",
+            "nota": "bairro pela metade, homônima"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "rua direta da engomadera",
+            "bairro": "barreiras",
+            "espera": "Rua DIreta da Engomadeira",
+            "espera_bairro": "Barreiras",
+            "nota": "i perdido"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "av afranio peixoto",
+            "bairro": "lobato",
+            "espera": "Avenida Afrânio Peixoto",
+            "espera_bairro": "Lobato",
+            "nota": "av abreviado, avenida longa"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "caminho 12 jaguaripe",
+            "bairro": "cajazeiras",
+            "espera": "Caminho 12-B - Jaguaripe I",
+            "espera_bairro": "Cajazeiras",
+            "nota": "caminhos numerados de conjunto"
+        },
+        {
+            "tipo": "rua",
+            "digitado": "rua sao jorge",
+            "bairro": null,
+            "espera": "Rua São Jorge",
+            "espera_bairro": null,
+            "nota": "homônima em 11 lugares, sem bairro: qualquer uma serve"
+        },
+        {
+            "tipo": "lugar",
+            "digitado": "atakarejo",
+            "bairro": "san martin",
+            "espera": "Atakarejo San Martin",
+            "espera_bairro": "Santa Mônica",
+            "nota": "rede com 22 lojas; bairro não é polígono no OSM"
+        },
+        {
+            "tipo": "lugar",
+            "digitado": "atacarejo",
+            "bairro": "brotas",
+            "espera": "Atacadão Atakarejo",
+            "espera_bairro": "Brotas",
+            "nota": "grafia c/k"
+        },
+        {
+            "tipo": "lugar",
+            "digitado": "atakarejo",
+            "bairro": "periperi",
+            "espera": "Atakadão Atakarejo",
+            "espera_bairro": "Periperi",
+            "nota": "rede"
+        },
+        {
+            "tipo": "lugar",
+            "digitado": "farmacia pague menos",
+            "bairro": "cabula",
+            "espera": "Pague Menos",
+            "espera_bairro": "Cabula",
+            "nota": "palavra genérica a mais, 48 lojas"
+        },
+        {
+            "tipo": "lugar",
+            "digitado": "igreja universal",
+            "bairro": "liberdade",
+            "espera": "Igreja Universal do Reino de Deus",
+            "espera_bairro": "Liberdade",
+            "nota": "nome incompleto, dezenas de templos"
+        },
+        {
+            "tipo": "lugar",
+            "digitado": "escola amelia rodrigues",
+            "bairro": "tororo",
+            "espera": "Escola Municipal Amelia Rodrigues",
+            "espera_bairro": "Tororó",
+            "nota": "palavra do meio faltando"
+        },
+        {
+            "tipo": "lugar",
+            "digitado": "hospital roberto santos",
+            "bairro": null,
+            "espera": "Hospital Geral Roberto Santos",
+            "espera_bairro": "Cabula",
+            "nota": "concorre com estádio e estacionamento homônimos"
+        },
+        {
+            "tipo": "lugar",
+            "digitado": "fonte nova",
+            "bairro": null,
+            "espera": "Casa de Apostas Arena Fonte Nova",
+            "espera_bairro": "Nazaré",
+            "nota": "nome comercial do estádio"
+        },
+        {
+            "tipo": "lugar",
+            "digitado": "mercado modelo",
+            "bairro": null,
+            "espera": "Mercado Modelo",
+            "espera_bairro": "Comércio",
+            "nota": "palavra 'mercado' é genérica"
+        },
+        {
+            "tipo": "lugar",
+            "digitado": "igreja do bomfim",
+            "bairro": "bonfim",
+            "espera": "Igreja Senhor do Bonfim",
+            "espera_bairro": "Bonfim",
+            "nota": "grafia com m"
+        },
+        {
+            "tipo": "lugar",
+            "digitado": "estacao da lapa",
+            "bairro": null,
+            "espera": "Estação da Lapa",
+            "espera_bairro": "Barris",
+            "nota": "bairro oficial é Barris, não Lapa"
+        },
+        {
+            "tipo": "lugar",
+            "digitado": "drogasil",
+            "bairro": "barra",
+            "espera": "Drogasil",
+            "espera_bairro": "Barra",
+            "nota": "rede com 90 lojas"
+        },
+        {
+            "tipo": "lugar",
+            "digitado": "upa sao cristovao",
+            "bairro": null,
+            "espera": "UPA Parque São Cristóvão",
+            "espera_bairro": "São Cristóvão",
+            "nota": "upa é palavra genérica"
+        }
+    ]
+}

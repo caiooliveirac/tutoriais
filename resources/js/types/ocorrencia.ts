@@ -44,8 +44,11 @@ export type Estimativa = {
 
 export type Sugestao = {
     id: string;
+    origem: 'catalogo' | 'google' | 'osm';
     principal: string;
     secundario: string;
+    homonimos?: number;
+    km?: number | null;
     // OSM já traz; Google precisa de /lugar
     lat?: number;
     lng?: number;
@@ -80,16 +83,27 @@ export type Arredores = {
 
 export type Rua = {
     nome: string;
+    bairro?: string | null;
+    homonimos?: number;
     metros: number;
+    // ponto da rua mais perto do local marcado
+    lat?: number;
+    lng?: number;
     trechos: [number, number][][];
 };
 
 export type LugarEncontrado = {
     nome: string;
     endereco: string;
+    bairro: string | null;
+    homonimos: number;
+    km: number | null;
     lat: number;
     lng: number;
+    origem: 'catalogo' | 'google';
 };
+
+export type BairroSugerido = { nome: string; lat: number; lng: number };
 
 export type ConfigMapas = {
     provedor: 'google' | 'osm';

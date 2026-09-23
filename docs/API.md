@@ -86,24 +86,40 @@ Resposta:
 
 ## Endpoints internos (sessão do TARM, usados pela tela de Atendimento)
 
-Pensados para quem digita errado: o endereço aceita escrita "de ouvido", o
-bairro é corrigido por som, o local pode ser achado pelo ponto de referência,
-e depois de marcado o sistema mostra o que há em volta para o TARM confirmar
-com o solicitante.
+A tela conduz o TARM numa ordem pensada para solicitante leigo:
+**1. bairro → 2. ponto de referência → 3. rua**. Cada passo filtra o próximo
+(a referência é buscada perto do bairro; as ruas, perto da referência), mas
+**nenhum filtro impede abrir a ocorrência**: basta a queixa e uma pista do
+local (endereço, bairro, referência ou clique no mapa).
 
-| Método | Caminho                                          | Uso                                                                                                                                       |
-| ------ | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| GET    | `/tutoriais/atendimento/sugerir?q=&sessao=`      | autocompletar do endereço. Google: `[{id, principal, secundario}]` (tolera erro de digitação); OSM: os mesmos campos + `lat, lng, bairro` |
-| GET    | `/tutoriais/atendimento/lugar?id=&sessao=`       | (só Google) detalhe da sugestão: `{rotulo, logradouro, numero, bairro, lat, lng}`                                                         |
-| GET    | `/tutoriais/atendimento/arredores?lat=&lng=`     | conferência: `{endereco, bairro, referencias: [{nome, tipo, lat, lng, metros}], avisos}` (resultado com falha não fica em cache)          |
-| GET    | `/tutoriais/atendimento/ruas?lat=&lng=`          | ruas com nome a até 250 m, com traçado: `[{nome, metros, trechos}]` (Overpass; separado porque o servidor público às vezes demora)        |
-| GET    | `/tutoriais/atendimento/referencia?q=&lat=&lng=` | acha um lugar pelo nome ("mercado Atakarejo", "igreja universal") perto do ponto, ou em Salvador                                          |
-| GET    | `/tutoriais/atendimento/bairros?q=`              | "quis dizer": bairros de Salvador parecidos pelo som (`rio vermeio` → Rio Vermelho)                                                       |
-| GET    | `/tutoriais/atendimento/estimativas?lat=&lng=`   | mesma resposta de `/api/v1/estimativas`                                                                                                   |
-| POST   | `/tutoriais/atendimento/ocorrencias`             | abre a ocorrência; grava `localizado_por` (endereco/referencia/mapa) e as 5 unidades sugeridas no evento de abertura                      |
+| Método | Caminho                                                       | Uso                                                                                                                                           |
+| ------ | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/tutoriais/atendimento/bairros?q=`                           | "quis dizer": bairros parecidos pelo som (`rio vermeio` → Rio Vermelho)                                                                       |
+| GET    | `/tutoriais/atendimento/referencia?q=&bairro=&lat=&lng=`      | lugar pelo nome: catálogo local primeiro, perto do bairro/ponto, com `homonimos` e `km`; depois Google (se ligado) puxado para a mesma região |
+| GET    | `/tutoriais/atendimento/sugerir?q=&sessao=&bairro=&lat=&lng=` | rua digitada: ruas do catálogo (com bairro, `homonimos`, `km`, coordenada) e depois o provedor (Google/OSM), marcadas por `origem`            |
+| GET    | `/tutoriais/atendimento/lugar?id=&sessao=`                    | (Google) detalhe de uma sugestão do Google                                                                                                    |
+| GET    | `/tutoriais/atendimento/ruas?lat=&lng=`                       | ruas a até 250 m, com o ponto de cada uma mais perto do local e o traçado — a lista "é numa destas ruas?"                                     |
+| GET    | `/tutoriais/atendimento/arredores?lat=&lng=`                  | endereço e bairro do ponto + lugares em volta (Google, ou catálogo local)                                                                     |
+| GET    | `/tutoriais/atendimento/estimativas?lat=&lng=`                | mesma resposta de `/api/v1/estimativas`                                                                                                       |
+| POST   | `/tutoriais/atendimento/ocorrencias`                          | abre a ocorrência; grava `localizado_por` e as 5 unidades sugeridas no evento de abertura                                                     |
 
-`sessao` é um UUID gerado pela tela a cada chamado: o Google cobra as
-digitações do autocompletar + o detalhe como uma sessão só.
+## Catálogo local de ruas e lugares (OpenStreetMap)
+
+Tabelas `ruas` e `lugares`, carregadas pelo `MapaSeeder` a partir de
+`database/data/osm-salvador.json.gz` (sem internet — LIVE, LAB e dev recebem o
+mesmo mapa). O arquivo é gerado por `php artisan osm:baixar` (Overpass, ~10 min,
+em quadrados de 0,05°); rode para atualizar e comite o `.gz`.
+
+- **Bairro** de cada rua/lugar: pelo polígono de bairro do OSM
+  (`admin_level=10`); onde não há polígono, o bairro de centro mais próximo.
+- **Uma rua por (nome, bairro)**: os trechos do mesmo nome no mesmo bairro se
+  juntam; o traçado vai em `trechos` para destacar no mapa.
+- **Homônimos**: `homonimos` = quantos outros registros da cidade têm o mesmo
+  nome ("Rua São José" em vários bairros, várias lojas "Atakarejo"). A tela
+  mostra ⚠ e pede para confirmar o bairro.
+- **Busca de ouvido**: coluna `som` (`App\Services\Mapas\Fonetica`): sem
+  acento, sem tipo de logradouro, sem "do/da", com as trocas de quem escreve
+  como ouve. "tororro" acha "Rua Amparo do Tororó".
 
 ## Serviços externos e produção
 

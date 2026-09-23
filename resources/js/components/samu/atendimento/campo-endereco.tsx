@@ -3,9 +3,12 @@ import { buscarJson } from '@/lib/buscar-json';
 import { lugar, sugerir } from '@/routes/atendimento';
 import type { Lugar, Sugestao } from '@/types';
 import { campo } from './estilos';
+import { Homonimo } from './homonimo';
 
 type Props = {
     valor: string;
+    bairro: string;
+    ponto: [number, number] | null;
     erro?: string;
     provedor: 'google' | 'osm';
     onDigitar: (texto: string) => void;
@@ -25,6 +28,8 @@ function novaSessao(): string {
  */
 export function CampoEndereco({
     valor,
+    bairro,
+    ponto,
     erro,
     provedor,
     onDigitar,
@@ -49,7 +54,12 @@ export function CampoEndereco({
             () => {
                 buscarJson<Sugestao[]>(
                     sugerir.url({
-                        query: { q: texto, sessao: sessao.current },
+                        query: {
+                            q: texto,
+                            sessao: sessao.current,
+                            ...(bairro.trim() ? { bairro } : {}),
+                            ...(ponto ? { lat: ponto[0], lng: ponto[1] } : {}),
+                        },
                     }),
                 )
                     .then((r) => {
@@ -67,6 +77,7 @@ export function CampoEndereco({
         );
 
         return () => clearTimeout(espera);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [valor, provedor]);
 
     async function escolher(s: Sugestao) {
@@ -102,14 +113,17 @@ export function CampoEndereco({
         <div className="relative">
             <label className="block">
                 <span className="mb-1 block text-[11px] font-bold text-black">
-                    Endereço
+                    3. Rua e número{' '}
+                    <span className="font-normal text-neutral-600">
+                        — escreva como ouvir; as da região vêm primeiro
+                    </span>
                 </span>
                 <input
                     className={campo}
                     value={valor}
                     onChange={(e) => onDigitar(e.target.value)}
                     onFocus={() => setAberto(sugestoes.length > 0)}
-                    placeholder="Rua, número — pode digitar do jeito que ouvir"
+                    placeholder="Ex.: rua do tororo 18"
                     autoComplete="off"
                 />
             </label>
@@ -131,6 +145,18 @@ export function CampoEndereco({
                                 <span className="text-neutral-600">
                                     {s.secundario}
                                 </span>
+                                {s.km != null && (
+                                    <span className="text-neutral-500">
+                                        {' '}
+                                        · {s.km} km
+                                    </span>
+                                )}
+                                <Homonimo n={s.homonimos} />
+                                {s.origem !== 'catalogo' && (
+                                    <span className="ml-1 text-[9px] text-neutral-400 uppercase">
+                                        {s.origem}
+                                    </span>
+                                )}
                             </button>
                         </li>
                     ))}

@@ -5,7 +5,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { CampoBairro } from '@/components/samu/atendimento/campo-bairro';
 import { CampoEndereco } from '@/components/samu/atendimento/campo-endereco';
 import { ChegamPrimeiro } from '@/components/samu/atendimento/chegam-primeiro';
-import { ConferenciaLocal } from '@/components/samu/atendimento/conferencia-local';
+import {
+    ConferenciaLocal,
+    PontoReferencia,
+} from '@/components/samu/atendimento/conferencia-local';
 import { botaoSecundario, campo } from '@/components/samu/atendimento/estilos';
 import { MapaAtendimento } from '@/components/samu/mapa';
 import { TabelaOcorrencias } from '@/components/samu/tabela-ocorrencias';
@@ -19,6 +22,7 @@ import {
 import { store } from '@/routes/atendimento/ocorrencias';
 import type {
     Arredores,
+    BairroSugerido,
     BaseMapa,
     ConfigMapas,
     Estimativa,
@@ -37,7 +41,7 @@ function Rotulo({
     erro,
     children,
 }: {
-    titulo: string;
+    titulo: ReactNode;
     erro?: string;
     children: ReactNode;
 }) {
@@ -78,6 +82,8 @@ export default function Atendimento({
         localizado_por: null as LocalizadoPor | null,
         vitimas: [{ ...vitimaVazia }] as Vitima[],
     });
+    const [bairroReconhecido, setBairroReconhecido] =
+        useState<BairroSugerido | null>(null);
     const [estimativa, setEstimativa] = useState<Estimativa | null>(null);
     const [arredores, setArredores] = useState<Arredores | null>(null);
     const [carregandoArredores, setCarregandoArredores] = useState(false);
@@ -87,7 +93,7 @@ export default function Atendimento({
     const ponto: [number, number] | null =
         lat !== null && lng !== null ? [lat, lng] : null;
 
-    // Local mudou: quem chega primeiro e o que há em volta para conferir.
+    // Local mudou: quem chega primeiro, ruas e lugares em volta para conferir.
     useEffect(() => {
         setArredores(null);
         setEstimativa(null);
@@ -102,8 +108,6 @@ export default function Atendimento({
         buscarJson<Estimativa>(estimativas.url(query))
             .then(setEstimativa)
             .catch(() => setEstimativa(null));
-
-        // Ruas vêm do Overpass (às vezes lento): chegam depois, sem segurar o resto.
         buscarJson<Rua[]>(rotaRuas.url(query))
             .then(setRuas)
             .catch((e: Error) => setAvisoRuas(e.message));
@@ -146,6 +150,19 @@ export default function Atendimento({
         }));
     }
 
+    // Rua reconhecida pelo solicitante na lista "é numa destas ruas?".
+    function escolherRua(r: Rua) {
+        form.setData((d) => ({
+            ...d,
+            endereco: r.nome,
+            bairro: d.bairro.trim() === '' && r.bairro ? r.bairro : d.bairro,
+            ...(r.lat !== undefined && r.lng !== undefined
+                ? { lat: r.lat, lng: r.lng }
+                : {}),
+            localizado_por: d.localizado_por ?? 'referencia',
+        }));
+    }
+
     function vitima(i: number, mudanca: Partial<Vitima>) {
         form.setData(
             'vitimas',
@@ -159,7 +176,10 @@ export default function Atendimento({
         e.preventDefault();
         form.post(store.url(), {
             preserveScroll: true,
-            onSuccess: () => form.reset(),
+            onSuccess: () => {
+                form.reset();
+                setBairroReconhecido(null);
+            },
         });
     }
 
@@ -170,7 +190,7 @@ export default function Atendimento({
         <>
             <Head title="Atendimento" />
 
-            <div className="grid gap-4 xl:grid-cols-[480px_1fr]">
+            <div className="grid gap-4 xl:grid-cols-[500px_1fr]">
                 <form
                     onSubmit={enviar}
                     className="space-y-3 rounded border border-neutral-200 bg-white p-4 shadow-sm"
@@ -209,48 +229,73 @@ export default function Atendimento({
                         </Rotulo>
                     </div>
 
-                    <CampoEndereco
-                        valor={form.data.endereco}
-                        erro={form.errors.endereco}
-                        provedor={mapas.provedor}
-                        onDigitar={(t) => form.setData('endereco', t)}
-                        onEscolher={escolherEndereco}
-                    />
+                    <fieldset className="space-y-2 rounded border border-neutral-200 p-2">
+                        <legend className="px-1 text-[10px] font-bold tracking-wider text-neutral-700 uppercase">
+                            Local — nesta ordem, e siga mesmo sem saber tudo
+                        </legend>
 
-                    <div className="grid grid-cols-2 gap-2">
                         <CampoBairro
                             valor={form.data.bairro}
                             erro={form.errors.bairro}
                             onMudar={(b) => form.setData('bairro', b)}
+                            onReconhecer={setBairroReconhecido}
                         />
-                        <Rotulo titulo="Cidade" erro={form.errors.cidade}>
-                            <input
-                                className={campo}
-                                value={form.data.cidade}
-                                onChange={(e) =>
-                                    form.setData('cidade', e.target.value)
-                                }
-                            />
-                        </Rotulo>
-                    </div>
 
-                    <ConferenciaLocal
-                        textoReferencia={form.data.ponto_referencia}
-                        onTextoReferencia={(t) =>
-                            form.setData('ponto_referencia', t)
-                        }
-                        ponto={ponto}
-                        arredores={arredores}
-                        carregando={carregandoArredores}
-                        ruas={ruas}
-                        avisoRuas={avisoRuas}
-                        bairroDigitado={form.data.bairro}
-                        onUsarBairro={(b) => form.setData('bairro', b)}
-                        onUsarLugar={(lat, lng) =>
-                            marcar(lat, lng, 'referencia')
-                        }
-                        erro={form.errors.ponto_referencia}
-                    />
+                        <PontoReferencia
+                            bairro={form.data.bairro}
+                            textoReferencia={form.data.ponto_referencia}
+                            onTextoReferencia={(t) =>
+                                form.setData('ponto_referencia', t)
+                            }
+                            ponto={ponto}
+                            onUsarLugar={(lat, lng, bairro) => {
+                                marcar(lat, lng, 'referencia');
+                                if (bairro && form.data.bairro.trim() === '') {
+                                    form.setData('bairro', bairro);
+                                }
+                            }}
+                            erro={form.errors.ponto_referencia}
+                        />
+
+                        <CampoEndereco
+                            valor={form.data.endereco}
+                            bairro={form.data.bairro}
+                            ponto={ponto}
+                            erro={form.errors.endereco}
+                            provedor={mapas.provedor}
+                            onDigitar={(t) => form.setData('endereco', t)}
+                            onEscolher={escolherEndereco}
+                        />
+
+                        <ConferenciaLocal
+                            ponto={ponto}
+                            arredores={arredores}
+                            carregando={carregandoArredores}
+                            ruas={ruas}
+                            avisoRuas={avisoRuas}
+                            bairroDigitado={form.data.bairro}
+                            enderecoDigitado={form.data.endereco}
+                            onUsarBairro={(b) => form.setData('bairro', b)}
+                            onEscolherRua={escolherRua}
+                        />
+
+                        <div className="grid grid-cols-[1fr_140px] gap-2">
+                            <p className="self-end text-[10px] text-neutral-600">
+                                {ponto
+                                    ? `Local marcado ${form.data.localizado_por === 'referencia' ? 'pelo ponto de referência' : form.data.localizado_por === 'endereco' ? 'pelo endereço' : 'no mapa'} — arraste o ponto vermelho para ajustar.`
+                                    : 'Sem local no mapa: escolha uma sugestão, localize a referência ou clique no mapa. Se não der, abra assim mesmo.'}
+                            </p>
+                            <Rotulo titulo="Cidade" erro={form.errors.cidade}>
+                                <input
+                                    className={campo}
+                                    value={form.data.cidade}
+                                    onChange={(e) =>
+                                        form.setData('cidade', e.target.value)
+                                    }
+                                />
+                            </Rotulo>
+                        </div>
+                    </fieldset>
 
                     <Rotulo titulo="Queixa" erro={form.errors.queixa}>
                         <input
@@ -347,23 +392,16 @@ export default function Atendimento({
                         ))}
                     </div>
 
-                    <p className="text-[10px] text-neutral-600">
-                        {ponto
-                            ? `Local marcado ${form.data.localizado_por === 'referencia' ? 'pelo ponto de referência' : form.data.localizado_por === 'endereco' ? 'pelo endereço' : 'no mapa'} — arraste o ponto vermelho para ajustar.`
-                            : 'Escolha um endereço sugerido, localize pelo ponto de referência ou clique no mapa.'}
-                        {erro('lat') && (
-                            <span className="block text-red-600">
-                                {erro('lat')}
-                            </span>
-                        )}
-                    </p>
-
                     <button
                         type="submit"
                         disabled={form.processing}
                         className="w-full rounded border border-b-4 border-yellow-600 bg-yellow-400 py-2 text-xs font-bold text-black uppercase shadow-md transition-all hover:bg-yellow-300 active:translate-y-0.5 active:border-b disabled:opacity-60"
                     >
-                        {form.processing ? 'Abrindo…' : 'Abrir ocorrência'}
+                        {form.processing
+                            ? 'Abrindo…'
+                            : ponto
+                              ? 'Abrir ocorrência'
+                              : 'Abrir ocorrência sem local no mapa'}
                     </button>
                 </form>
 
@@ -372,6 +410,11 @@ export default function Atendimento({
                         config={mapas}
                         bases={bases}
                         ponto={ponto}
+                        centro={
+                            bairroReconhecido
+                                ? [bairroReconhecido.lat, bairroReconhecido.lng]
+                                : null
+                        }
                         estimativa={estimativa}
                         arredores={arredores}
                         ruas={ruas ?? []}
