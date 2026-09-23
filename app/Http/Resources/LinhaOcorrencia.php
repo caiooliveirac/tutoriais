@@ -39,6 +39,7 @@ class LinhaOcorrencia extends JsonResource
             'solicitado_envio_hora' => $this->local($this->solicitado_envio_em, 'H:i'),
             'unidade' => $this->unidade?->codigo,
             'despachada_hora' => $this->local($this->despachada_em, 'H:i'),
+            'despachante' => $this->despachante?->name,
             'unidade_desvinculada' => $this->unidade_desvinculada,
             'hospital' => $this->hospital->sigla ?? $this->hospital?->nome,
             'intercorrencia' => $this->intercorrencia?->titulo(),

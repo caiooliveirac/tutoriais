@@ -19,6 +19,10 @@ const c = {
     hora: { titulo: 'Hora', celula: (l: Linha) => l.hora },
     telefone: { titulo: 'Telefone', celula: (l: Linha) => l.telefone },
     medico: { titulo: 'Médico', celula: (l: Linha) => l.medico ?? '---' },
+    despachante: {
+        titulo: 'Despachou',
+        celula: (l: Linha) => l.despachante ?? '---',
+    },
     tarm: { titulo: 'TARM', celula: (l: Linha) => l.tarm },
     cidade: { titulo: 'Cidade', celula: (l: Linha) => l.cidade },
     bairro: { titulo: 'Bairro', celula: (l: Linha) => l.bairro },
@@ -92,12 +96,13 @@ const tabelas: Record<string, Tabela> = {
     },
     regulacao: {
         titulo: 'Regulação',
-        grid: 'grid-cols-[120px_70px_1fr_1fr_2fr_130px_50px_180px]',
+        grid: 'grid-cols-[120px_70px_1fr_1fr_1fr_2fr_130px_50px_180px]',
         colunas: [
             c.protocolo,
             c.hora,
             c.bairro,
             c.medico,
+            c.despachante,
             c.queixa,
             c.equipe,
             c.risco,
@@ -106,12 +111,14 @@ const tabelas: Record<string, Tabela> = {
     },
     encerradas: {
         titulo: 'Encerradas (12h)',
-        grid: 'grid-cols-[120px_70px_1fr_1fr_2fr_50px_220px]',
+        grid: 'grid-cols-[120px_70px_1fr_1fr_1fr_1fr_2fr_50px_220px]',
         colunas: [
             c.protocolo,
             c.hora,
             c.bairro,
+            c.tarm,
             c.medico,
+            c.despachante,
             c.queixa,
             c.risco,
             c.status,

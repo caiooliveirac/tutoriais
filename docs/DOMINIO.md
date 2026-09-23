@@ -67,6 +67,11 @@ em 39 ocorrências que cobrem todos os status, as 5 intercorrências e uma ficha
 travada — cada uma com a linha do tempo completa em `eventos_ocorrencia`.
 Determinístico: mesma semente, mesmo plantão, com horários relativos a "agora".
 
+Escala fixa com login (senha `lab123`, só LAB e dev): 5 TARMs, 4 médicos
+reguladores, 2 enfermeiros, 4 rádio-operadores e 1 chefe de plantão (que também
+regula), além dos usuários demo. Cada decisão tem responsável: `tarm_id`,
+`medico_id`, `despachada_por` na ocorrência e `user_id` + `perfil` em cada evento.
+
 ```bash
 php artisan migrate:fresh --seed --seeder=LabSeeder
 ```

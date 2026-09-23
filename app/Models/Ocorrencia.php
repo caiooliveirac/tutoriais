@@ -59,6 +59,12 @@ class Ocorrencia extends Model
     }
 
     /** @return BelongsTo<User, $this> */
+    public function despachante(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'despachada_por');
+    }
+
+    /** @return BelongsTo<User, $this> */
     public function travadaPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'travada_por');

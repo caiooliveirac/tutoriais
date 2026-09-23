@@ -50,3 +50,14 @@ test('LabSeeder se recusa a rodar em produção', function () {
 
     expect(fn () => app(LabSeeder::class)->run())->toThrow(RuntimeException::class);
 });
+
+test('toda decisão do plantão LAB tem um responsável identificado', function () {
+    expect(Ocorrencia::whereNotNull('despachada_em')->whereNull('despachada_por')->count())->toBe(0)
+        ->and(Ocorrencia::whereNotIn('status', ['aguardando_triagem', 'cancelado'])->whereNull('medico_id')->count())->toBe(0)
+        ->and(EventoOcorrencia::whereNull('user_id')->orWhereNull('perfil')->count())->toBe(0);
+});
+
+test('a escala do LAB consegue logar com a senha do LAB', function () {
+    $this->post('/tutoriais/login', ['email' => 'tania.nascimento@lab.samu.test', 'password' => LabSeeder::LAB_SENHA])
+        ->assertRedirect('/tutoriais/dashboard');
+});

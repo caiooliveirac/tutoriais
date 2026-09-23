@@ -43,7 +43,7 @@ class PainelController extends Controller
      */
     private function consulta(string $tabela, Request $request): Builder
     {
-        $query = Ocorrencia::query()->with(['tarm', 'medico', 'unidade', 'hospital', 'travadaPor']);
+        $query = Ocorrencia::query()->with(['tarm', 'medico', 'despachante', 'unidade', 'hospital', 'travadaPor']);
 
         return match ($tabela) {
             'chamados' => $query->where('tarm_id', $request->user()->id)

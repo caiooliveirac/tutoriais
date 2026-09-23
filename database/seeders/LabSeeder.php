@@ -235,7 +235,7 @@ class LabSeeder extends Seeder
             : [$radio, Perfil::RadioOperador];
         $unidade = $this->unidadeLivre($s['recurso']);
         $t = $t->addMinutes(mt_rand(1, 4))->addSeconds(mt_rand(0, 59));
-        $o->update(['unidade_id' => $unidade->id, 'despachada_em' => $t, 'status' => StatusOcorrencia::AguardandoRetorno]);
+        $o->update(['unidade_id' => $unidade->id, 'despachada_em' => $t, 'despachada_por' => $despachante->id, 'status' => StatusOcorrencia::AguardandoRetorno]);
         $this->evento($o, TipoEvento::Despachada, "Unidade {$unidade->codigo} despachada", $despachante, $perfil, $t);
 
         if ($etapa === 'retorno') {
@@ -337,29 +337,44 @@ class LabSeeder extends Seeder
         return $livre;
     }
 
+    /**
+     * Escala do plantão: pessoas fictícias com login próprio (senha LAB_SENHA),
+     * mais os usuários demo, para que cada decisão tenha um responsável.
+     */
     private function montarEquipe(): void
     {
-        $extras = [
-            [Perfil::Tarm, 3],
-            [Perfil::MedicoRegulador, 3],
-            [Perfil::EnfermeiroRegulador, 1],
-            [Perfil::RadioOperador, 2],
-        ];
-
-        foreach ($extras as [$perfil, $quantos]) {
+        foreach (self::ESCALA as $perfil => $pessoas) {
+            $perfil = Perfil::from($perfil);
             $membros = array_values(User::whereJsonContains('perfis', $perfil->value)->get()->all());
 
-            for ($i = 1; $i <= $quantos; $i++) {
-                $sexo = mt_rand(0, 1) ? 'M' : 'F';
-                $nome = ($perfil === Perfil::MedicoRegulador ? ($sexo === 'M' ? 'Dr. ' : 'Dra. ') : '').Str::title($this->nome($sexo));
+            foreach ($pessoas as $nome) {
                 $membros[] = User::updateOrCreate(
-                    ['email' => "{$perfil->value}.{$i}@lab.samu.test"],
-                    ['name' => $nome, 'password' => Str::random(32), 'perfis' => [$perfil], 'email_verified_at' => now()],
+                    ['email' => $this->emailDe($nome)],
+                    [
+                        'name' => $nome,
+                        'password' => self::LAB_SENHA,
+                        'perfis' => $perfil === Perfil::ChefePlantao ? [$perfil, Perfil::MedicoRegulador] : [$perfil],
+                        'email_verified_at' => now(),
+                    ],
                 );
             }
 
             $this->equipe[$perfil->value] = $membros;
         }
+
+        // o chefe de plantão também regula
+        $this->equipe[Perfil::MedicoRegulador->value] = array_merge(
+            $this->equipe[Perfil::MedicoRegulador->value],
+            array_slice($this->equipe[Perfil::ChefePlantao->value], 1),
+        );
+    }
+
+    /** "Dra. Camila Rodrigues" → camila.rodrigues@lab.samu.test */
+    private function emailDe(string $nome): string
+    {
+        $partes = explode(' ', Str::ascii(Str::lower(preg_replace('/^(Dra?|Enf)\. /', '', $nome) ?? $nome)));
+
+        return $partes[0].'.'.end($partes).'@lab.samu.test';
     }
 
     private function alguem(Perfil $perfil): User
@@ -403,6 +418,17 @@ class LabSeeder extends Seeder
 
         return explode(' ', $this->nome($sexo))[0].' ('.$this->sortear(self::VINCULOS[$sexo]).')';
     }
+
+    public const LAB_SENHA = 'lab123';
+
+    /** @var array<string, list<string>> */
+    private const ESCALA = [
+        'tarm' => ['Ana Paula Bispo', 'Carlos Souza Reis', 'Maria Oliveira Santos', 'Joelma Conceição', 'Renato Almeida'],
+        'medico_regulador' => ['Dr. Marcos Gomes', 'Dra. Camila Rodrigues', 'Dr. João Pereira', 'Dra. Juliana Martins'],
+        'enfermeiro_regulador' => ['Enf. Tânia Nascimento', 'Enf. Gilberto Araújo'],
+        'radio_operador' => ['Edson Bonfim', 'Rita Costa', 'Davi Lima', 'Iara Silva'],
+        'chefe_plantao' => ['Dra. Beatriz Almeida'],
+    ];
 
     private const NOMES_M = ['JOÃO', 'CARLOS', 'ANTÔNIO', 'JOSÉ', 'PAULO', 'LUCAS', 'RAFAEL', 'MARCOS', 'DAVI', 'ENZO', 'CAIO', 'RICARDO', 'EDSON', 'GILBERTO', 'RENATO'];
 

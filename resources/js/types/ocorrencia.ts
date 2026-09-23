@@ -18,6 +18,7 @@ export type Linha = {
     solicitado_envio_hora: string | null;
     unidade: string | null;
     despachada_hora: string | null;
+    despachante: string | null;
     unidade_desvinculada: boolean;
     hospital: string | null;
     intercorrencia: string | null;
