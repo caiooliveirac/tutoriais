@@ -25,6 +25,7 @@ Route::prefix('tutoriais')->group(function () {
                 Route::get('sugerir', [AtendimentoController::class, 'sugerir'])->name('sugerir');
                 Route::get('lugar', [AtendimentoController::class, 'lugar'])->name('lugar');
                 Route::get('arredores', [AtendimentoController::class, 'arredores'])->name('arredores');
+                Route::get('ruas', [AtendimentoController::class, 'ruas'])->name('ruas');
                 Route::get('referencia', [AtendimentoController::class, 'referencia'])->name('referencia');
                 Route::get('bairros', [AtendimentoController::class, 'bairros'])->name('bairros');
                 Route::get('estimativas', [AtendimentoController::class, 'estimativas'])->name('estimativas');

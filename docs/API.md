@@ -95,7 +95,8 @@ com o solicitante.
 | ------ | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | GET    | `/tutoriais/atendimento/sugerir?q=&sessao=`      | autocompletar do endereço. Google: `[{id, principal, secundario}]` (tolera erro de digitação); OSM: os mesmos campos + `lat, lng, bairro` |
 | GET    | `/tutoriais/atendimento/lugar?id=&sessao=`       | (só Google) detalhe da sugestão: `{rotulo, logradouro, numero, bairro, lat, lng}`                                                         |
-| GET    | `/tutoriais/atendimento/arredores?lat=&lng=`     | conferência: `{endereco, bairro, ruas: [{nome, metros, trechos}], referencias: [{nome, tipo, lat, lng, metros}], avisos}`                 |
+| GET    | `/tutoriais/atendimento/arredores?lat=&lng=`     | conferência: `{endereco, bairro, referencias: [{nome, tipo, lat, lng, metros}], avisos}` (resultado com falha não fica em cache)          |
+| GET    | `/tutoriais/atendimento/ruas?lat=&lng=`          | ruas com nome a até 250 m, com traçado: `[{nome, metros, trechos}]` (Overpass; separado porque o servidor público às vezes demora)        |
 | GET    | `/tutoriais/atendimento/referencia?q=&lat=&lng=` | acha um lugar pelo nome ("mercado Atakarejo", "igreja universal") perto do ponto, ou em Salvador                                          |
 | GET    | `/tutoriais/atendimento/bairros?q=`              | "quis dizer": bairros de Salvador parecidos pelo som (`rio vermeio` → Rio Vermelho)                                                       |
 | GET    | `/tutoriais/atendimento/estimativas?lat=&lng=`   | mesma resposta de `/api/v1/estimativas`                                                                                                   |

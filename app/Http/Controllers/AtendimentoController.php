@@ -51,6 +51,13 @@ class AtendimentoController extends Controller
         return response()->json($localizador->arredores((float) $dados['lat'], (float) $dados['lng']));
     }
 
+    public function ruas(Request $request, Localizador $localizador): JsonResponse
+    {
+        $dados = $request->validate(self::COORDENADAS);
+
+        return $this->ouAviso(fn () => $localizador->ruas((float) $dados['lat'], (float) $dados['lng']), 'Ruas próximas indisponíveis (servidor de mapas lento). Tente de novo em instantes.');
+    }
+
     public function referencia(Request $request, Localizador $localizador): JsonResponse
     {
         $dados = $request->validate([

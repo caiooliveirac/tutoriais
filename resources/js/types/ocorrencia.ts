@@ -74,9 +74,14 @@ export type Referencia = {
 export type Arredores = {
     endereco: string | null;
     bairro: string | null;
-    ruas: { nome: string; metros: number; trechos: [number, number][][] }[];
     referencias: Referencia[];
     avisos: string[];
+};
+
+export type Rua = {
+    nome: string;
+    metros: number;
+    trechos: [number, number][][];
 };
 
 export type LugarEncontrado = {

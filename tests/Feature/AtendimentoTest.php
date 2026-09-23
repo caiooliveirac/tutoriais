@@ -104,15 +104,27 @@ test('sem chaves do Google, sugestões vêm do OSM já com coordenada', function
         ->assertJsonPath('0.lat', -12.979);
 });
 
-test('arredores trazem bairro, ruas com traçado e referências por distância', function () {
+test('arredores trazem bairro e referências por distância; ruas vêm à parte com traçado', function () {
     $r = $this->actingAs($this->tarm)->getJson('/tutoriais/atendimento/arredores?lat=-12.979&lng=-38.505')
         ->assertOk()->json();
 
     expect($r['bairro'])->toBe('Tororó')
-        ->and(array_column($r['ruas'], 'nome'))->toBe(['Rua do Tororó', 'Ladeira da Fonte'])
-        ->and($r['ruas'][0]['trechos'][0])->toHaveCount(2)
         ->and($r['referencias'][0]['nome'])->toBe('Farmácia do Povo')
+        ->and($r['referencias'][0]['tipo'])->toBe('farmácia')
         ->and($r['avisos'])->toBe([]);
+
+    $ruas = $this->actingAs($this->tarm)->getJson('/tutoriais/atendimento/ruas?lat=-12.979&lng=-38.505')->assertOk()->json();
+    expect(array_column($ruas, 'nome'))->toBe(['Rua do Tororó', 'Ladeira da Fonte'])
+        ->and($ruas[0]['trechos'][0])->toHaveCount(2);
+});
+
+test('Overpass fora do ar: ruas avisam, conferência continua', function () {
+    config(['services.overpass.url' => 'https://overpass-fora.test/api']);
+    Http::fake(['overpass-fora.test/*' => Http::response(null, 504)]);
+
+    $this->actingAs($this->tarm)->getJson('/tutoriais/atendimento/ruas?lat=-12.979&lng=-38.505')->assertStatus(503);
+    $this->actingAs($this->tarm)->getJson('/tutoriais/atendimento/arredores?lat=-12.979&lng=-38.505')
+        ->assertOk()->assertJsonPath('bairro', 'Tororó');
 });
 
 test('bairro digitado de ouvido é reconhecido', function () {
@@ -160,8 +172,9 @@ test('com as chaves do Google, a tela usa Google para sugerir, detalhar e achar 
         ->assertOk()->assertJson(['logradouro' => 'Rua do Tororó', 'numero' => '18', 'bairro' => 'Tororó', 'lat' => -12.979]);
 
     $r = $this->actingAs($this->tarm)->getJson('/tutoriais/atendimento/arredores?lat=-12.979&lng=-38.505')->json();
-    expect($r['referencias'][0]['nome'])->toBe('Igreja Batista do Tororó')
-        ->and($r['ruas'][0]['nome'])->toBe('Rua do Tororó'); // ruas continuam do OSM
+    expect($r['referencias'][0]['nome'])->toBe('Igreja Batista do Tororó');
+    $this->actingAs($this->tarm)->getJson('/tutoriais/atendimento/ruas?lat=-12.979&lng=-38.505')
+        ->assertJsonPath('0.nome', 'Rua do Tororó'); // ruas continuam do OSM
 
     $this->actingAs($this->tarm)->getJson('/tutoriais/atendimento/referencia?q=hospital roberto santos')
         ->assertOk()->assertJsonPath('0.nome', 'Hospital Geral Roberto Santos');
@@ -242,6 +255,5 @@ test('Google recusando a geocodificação vira aviso, sem derrubar a conferênci
     $r = $this->actingAs($this->tarm)->getJson('/tutoriais/atendimento/arredores?lat=-12.979&lng=-38.505')->assertOk()->json();
 
     expect($r['avisos'])->toContain('Endereço do ponto indisponível')
-        ->and($r['bairro'])->toBe('Nazaré') // cai para o bairro mais próximo
-        ->and($r['ruas'])->not->toBeEmpty();
+        ->and($r['bairro'])->toBe('Nazaré'); // cai para o bairro mais próximo
 });

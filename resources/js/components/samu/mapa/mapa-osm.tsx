@@ -13,6 +13,7 @@ export function MapaOsm({
     ponto,
     estimativa,
     arredores,
+    ruas,
     onMarcar,
 }: PropsMapa) {
     const elemento = useRef<HTMLDivElement>(null);
@@ -36,7 +37,7 @@ export function MapaOsm({
 
         camada.current.clearLayers();
 
-        arredores?.ruas.forEach((rua, i) => {
+        ruas.forEach((rua, i) => {
             rua.trechos.forEach((trecho, j) => {
                 const linha = L.polyline(trecho, {
                     color: CORES.rua,
@@ -123,7 +124,7 @@ export function MapaOsm({
         };
     }, []);
 
-    useEffect(() => redesenhar.current(), [bases, estimativa, arredores]);
+    useEffect(() => redesenhar.current(), [bases, estimativa, arredores, ruas]);
 
     useEffect(() => {
         const L = leaflet.current;

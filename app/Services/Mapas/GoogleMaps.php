@@ -171,7 +171,9 @@ class GoogleMaps
 
     private function http(): PendingRequest
     {
-        return Http::timeout(5)->withHeaders([
+        // Sempre IPv4: a chave do servidor é restrita por IP, e o IPv6 muda
+        // (prefixo dinâmico da operadora); o IPv4 é um só, cadastrável.
+        return Http::timeout(5)->withOptions(['force_ip_resolve' => 'v4'])->withHeaders([
             'X-Goog-Api-Key' => (string) config('services.google_maps.chave_servidor'),
         ]);
     }

@@ -53,6 +53,7 @@ export function MapaGoogle({
     ponto,
     estimativa,
     arredores,
+    ruas,
     onMarcar,
 }: PropsMapa & { chave: string }) {
     const elemento = useRef<HTMLDivElement>(null);
@@ -107,7 +108,7 @@ export function MapaGoogle({
         camada.current = [];
         const m = mapa.current;
 
-        arredores?.ruas.forEach((rua) =>
+        ruas.forEach((rua) =>
             rua.trechos.forEach((trecho) =>
                 camada.current.push(
                     new google.maps.Polyline({
@@ -170,7 +171,7 @@ export function MapaGoogle({
                 }),
             );
         }
-    }, [pronto, bases, estimativa, arredores]);
+    }, [pronto, bases, estimativa, arredores, ruas]);
 
     useEffect(() => {
         if (!pronto || !mapa.current || !ponto) {

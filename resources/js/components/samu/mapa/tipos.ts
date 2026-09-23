@@ -1,10 +1,11 @@
-import type { Arredores, BaseMapa, Estimativa } from '@/types';
+import type { Arredores, BaseMapa, Estimativa, Rua } from '@/types';
 
 export type PropsMapa = {
     bases: BaseMapa[];
     ponto: [number, number] | null;
     estimativa: Estimativa | null;
     arredores: Arredores | null;
+    ruas: Rua[];
     onMarcar: (lat: number, lng: number) => void;
 };
 

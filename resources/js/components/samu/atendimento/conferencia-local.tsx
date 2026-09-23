@@ -2,7 +2,7 @@ import { AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
 import { buscarJson } from '@/lib/buscar-json';
 import { referencia } from '@/routes/atendimento';
-import type { Arredores, LugarEncontrado } from '@/types';
+import type { Arredores, LugarEncontrado, Rua } from '@/types';
 import { botaoSecundario, campo } from './estilos';
 
 type Props = {
@@ -11,6 +11,8 @@ type Props = {
     ponto: [number, number] | null;
     arredores: Arredores | null;
     carregando: boolean;
+    ruas: Rua[] | null;
+    avisoRuas: string | null;
     bairroDigitado: string;
     onUsarBairro: (b: string) => void;
     onUsarLugar: (lat: number, lng: number) => void;
@@ -139,6 +141,16 @@ export function ConferenciaLocal(p: Props) {
                     <div className="mb-1 font-bold text-black uppercase">
                         Confira com o solicitante
                     </div>
+                    <p>
+                        <span className="font-bold">Ruas perto:</span>{' '}
+                        {p.ruas === null
+                            ? (p.avisoRuas ?? 'procurando…')
+                            : p.ruas.length === 0
+                              ? 'nenhuma rua com nome a menos de 250 m'
+                              : p.ruas
+                                    .map((r) => `${r.nome} (${r.metros} m)`)
+                                    .join(' · ')}
+                    </p>
                     {p.carregando && !p.arredores && (
                         <p className="text-neutral-600">
                             Procurando ruas e lugares em volta…
@@ -180,16 +192,6 @@ export function ConferenciaLocal(p: Props) {
                                             </button>
                                         </>
                                     )}
-                                </p>
-                            )}
-                            {p.arredores.ruas.length > 0 && (
-                                <p>
-                                    <span className="font-bold">
-                                        Ruas perto:
-                                    </span>{' '}
-                                    {p.arredores.ruas
-                                        .map((r) => `${r.nome} (${r.metros} m)`)
-                                        .join(' · ')}
                                 </p>
                             )}
                             {p.arredores.referencias.length > 0 && (

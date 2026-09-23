@@ -11,7 +11,11 @@ import { MapaAtendimento } from '@/components/samu/mapa';
 import { TabelaOcorrencias } from '@/components/samu/tabela-ocorrencias';
 import { tabelas } from '@/components/samu/tabelas';
 import { buscarJson } from '@/lib/buscar-json';
-import { arredores as rotaArredores, estimativas } from '@/routes/atendimento';
+import {
+    arredores as rotaArredores,
+    estimativas,
+    ruas as rotaRuas,
+} from '@/routes/atendimento';
 import { store } from '@/routes/atendimento/ocorrencias';
 import type {
     Arredores,
@@ -20,6 +24,7 @@ import type {
     Estimativa,
     Linha,
     Lugar,
+    Rua,
 } from '@/types';
 
 type Vitima = { nome: string; idade: string; sexo: '' | 'M' | 'F' };
@@ -76,6 +81,8 @@ export default function Atendimento({
     const [estimativa, setEstimativa] = useState<Estimativa | null>(null);
     const [arredores, setArredores] = useState<Arredores | null>(null);
     const [carregandoArredores, setCarregandoArredores] = useState(false);
+    const [ruas, setRuas] = useState<Rua[] | null>(null);
+    const [avisoRuas, setAvisoRuas] = useState<string | null>(null);
     const { lat, lng } = form.data;
     const ponto: [number, number] | null =
         lat !== null && lng !== null ? [lat, lng] : null;
@@ -84,6 +91,8 @@ export default function Atendimento({
     useEffect(() => {
         setArredores(null);
         setEstimativa(null);
+        setRuas(null);
+        setAvisoRuas(null);
 
         if (lat === null || lng === null) {
             return;
@@ -93,6 +102,11 @@ export default function Atendimento({
         buscarJson<Estimativa>(estimativas.url(query))
             .then(setEstimativa)
             .catch(() => setEstimativa(null));
+
+        // Ruas vêm do Overpass (às vezes lento): chegam depois, sem segurar o resto.
+        buscarJson<Rua[]>(rotaRuas.url(query))
+            .then(setRuas)
+            .catch((e: Error) => setAvisoRuas(e.message));
 
         setCarregandoArredores(true);
         buscarJson<Arredores>(rotaArredores.url(query))
@@ -228,6 +242,8 @@ export default function Atendimento({
                         ponto={ponto}
                         arredores={arredores}
                         carregando={carregandoArredores}
+                        ruas={ruas}
+                        avisoRuas={avisoRuas}
                         bairroDigitado={form.data.bairro}
                         onUsarBairro={(b) => form.setData('bairro', b)}
                         onUsarLugar={(lat, lng) =>
@@ -358,6 +374,7 @@ export default function Atendimento({
                         ponto={ponto}
                         estimativa={estimativa}
                         arredores={arredores}
+                        ruas={ruas ?? []}
                         onMarcar={marcar}
                     />
                     <ChegamPrimeiro estimativa={estimativa} />

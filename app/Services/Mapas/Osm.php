@@ -73,49 +73,47 @@ class Osm
     }
 
     /**
-     * Ruas (com o traçado, para destacar no mapa) e lugares com nome em volta.
+     * Ruas com nome em volta do ponto, com o traçado para destacar no mapa.
      *
-     * @return array{
-     *     ruas: list<array{nome: string, metros: int, trechos: list<list<array{0: float, 1: float}>>}>,
-     *     referencias: list<array{nome: string, tipo: string, lat: float, lng: float, metros: int}>
-     * }
+     * @return list<array{nome: string, metros: int, trechos: list<list<array{0: float, 1: float}>>}>
      */
-    public function arredores(float $lat, float $lng): array
+    public function ruas(float $lat, float $lng): array
     {
-        $consulta = <<<OVERPASS
-            [out:json][timeout:8];
+        $ruas = [];
+        foreach ($this->overpass(<<<OVERPASS
+            [out:json][timeout:6];
             way(around:250,{$lat},{$lng})[highway~"^(trunk|primary|secondary|tertiary|residential|unclassified|living_street|pedestrian|service|footway|steps)$"][name];
             out tags geom;
-            nwr(around:350,{$lat},{$lng})[name][~"^(amenity|shop|leisure|tourism|healthcare)$"~"."];
-            out tags center 40;
-            OVERPASS;
-
-        $elementos = Http::withUserAgent(config('services.nominatim.user_agent'))
-            ->timeout(9)
-            ->asForm()
-            ->post(config('services.overpass.url'), ['data' => $consulta])
-            ->throw()
-            ->json('elements', []);
-
-        $ruas = [];
-        $referencias = [];
-        foreach ($elementos as $e) {
-            if (isset($e['tags']['highway'], $e['geometry'])) {
-                $trecho = array_values(array_map(fn (array $p) => [(float) $p['lat'], (float) $p['lon']], $e['geometry']));
-                if ($trecho === []) {
-                    continue;
-                }
-                $metros = min(array_map(fn (array $p) => Geo::metros($lat, $lng, $p[0], $p[1]), $trecho));
-                $nome = (string) $e['tags']['name'];
-                $ruas[$nome] ??= ['nome' => $nome, 'metros' => $metros, 'trechos' => []];
-                $ruas[$nome]['metros'] = min($ruas[$nome]['metros'], $metros);
-                $ruas[$nome]['trechos'][] = $trecho;
-
+            OVERPASS) as $e) {
+            $trecho = array_values(array_map(fn (array $p) => [(float) $p['lat'], (float) $p['lon']], $e['geometry'] ?? []));
+            if ($trecho === [] || ! isset($e['tags']['name'])) {
                 continue;
             }
+            $metros = min(array_map(fn (array $p) => Geo::metros($lat, $lng, $p[0], $p[1]), $trecho));
+            $nome = (string) $e['tags']['name'];
+            $ruas[$nome] ??= ['nome' => $nome, 'metros' => $metros, 'trechos' => []];
+            $ruas[$nome]['metros'] = min($ruas[$nome]['metros'], $metros);
+            $ruas[$nome]['trechos'][] = $trecho;
+        }
 
+        return array_values(collect($ruas)->sortBy('metros')->take(8)->all());
+    }
+
+    /**
+     * Lugares com nome em volta (usado quando não há Google).
+     *
+     * @return list<array{nome: string, tipo: string, lat: float, lng: float, metros: int}>
+     */
+    public function referencias(float $lat, float $lng): array
+    {
+        $referencias = [];
+        foreach ($this->overpass(<<<OVERPASS
+            [out:json][timeout:6];
+            nwr(around:350,{$lat},{$lng})[name][~"^(amenity|shop|leisure|tourism|healthcare)$"~"."];
+            out tags center 40;
+            OVERPASS) as $e) {
             $p = $e['center'] ?? $e;
-            if (! isset($p['lat'], $p['lon'])) {
+            if (! isset($p['lat'], $p['lon'], $e['tags']['name'])) {
                 continue;
             }
             $tags = $e['tags'];
@@ -130,10 +128,20 @@ class Osm
 
         usort($referencias, fn (array $a, array $b) => $a['metros'] <=> $b['metros']);
 
-        return [
-            'ruas' => array_values(collect($ruas)->sortBy('metros')->take(8)->all()),
-            'referencias' => array_slice($referencias, 0, 12),
-        ];
+        return array_slice($referencias, 0, 12);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function overpass(string $consulta): array
+    {
+        return Http::withUserAgent(config('services.nominatim.user_agent'))
+            ->timeout(7)
+            ->asForm()
+            ->post(config('services.overpass.url'), ['data' => $consulta])
+            ->throw()
+            ->json('elements', []);
     }
 
     private function nominatim(): PendingRequest
