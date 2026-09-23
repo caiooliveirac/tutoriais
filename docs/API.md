@@ -107,8 +107,10 @@ local (endereço, bairro, referência ou clique no mapa).
 
 Tabelas `ruas` e `lugares`, carregadas pelo `MapaSeeder` a partir de
 `database/data/osm-salvador.json.gz` (sem internet — LIVE, LAB e dev recebem o
-mesmo mapa). O arquivo é gerado por `php artisan osm:baixar` (Overpass, ~10 min,
-em quadrados de 0,05°); rode para atualizar e comite o `.gz`.
+mesmo mapa). O arquivo é gerado por `php artisan osm:importar`: baixa o recorte
+oficial do Nordeste da Geofabrik (~450 MB, apagado no fim), recorta Salvador com
+`osmium-tool` e converte em segundos. Rode para atualizar e comite o `.gz`.
+Qualidade da busca: `php artisan mapas:avaliar`.
 
 - **Bairro** de cada rua/lugar: pelo polígono de bairro do OSM
   (`admin_level=10`); onde não há polígono, o bairro de centro mais próximo.

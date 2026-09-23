@@ -12,7 +12,7 @@ type Props = {
     erro?: string;
     provedor: 'google' | 'osm';
     onDigitar: (texto: string) => void;
-    onEscolher: (l: Lugar) => void;
+    onEscolher: (l: Lugar, digitado: string, origem: string) => void;
 };
 
 function novaSessao(): string {
@@ -103,7 +103,7 @@ export function CampoEndereco({
             escolhido.current =
                 [l.logradouro, l.numero].filter(Boolean).join(', ') || l.rotulo;
             sessao.current = novaSessao();
-            onEscolher(l);
+            onEscolher(l, valor, s.origem);
         } catch (e) {
             setAviso((e as Error).message);
         }

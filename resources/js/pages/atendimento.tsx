@@ -1,6 +1,6 @@
 import { Head, useForm } from '@inertiajs/react';
 import { Plus, Trash2 } from 'lucide-react';
-import type { FormEvent, ReactNode } from 'react';
+import type { FormEvent, KeyboardEvent, ReactNode } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { CampoBairro } from '@/components/samu/atendimento/campo-bairro';
 import { CampoEndereco } from '@/components/samu/atendimento/campo-endereco';
@@ -33,6 +33,13 @@ import type {
 
 type Vitima = { nome: string; idade: string; sexo: '' | 'M' | 'F' };
 type LocalizadoPor = 'endereco' | 'referencia' | 'mapa';
+// Um passo de como o local foi achado: o que o TARM digitou × o que escolheu.
+type Passo = {
+    passo: string;
+    digitado: string | null;
+    escolhido: string | null;
+    origem: string | null;
+};
 
 const vitimaVazia: Vitima = { nome: '', idade: '', sexo: '' };
 
@@ -80,6 +87,7 @@ export default function Atendimento({
         lat: null as number | null,
         lng: null as number | null,
         localizado_por: null as LocalizadoPor | null,
+        abertura: 'normal' as 'normal' | 'ligacao_caiu',
         vitimas: [{ ...vitimaVazia }] as Vitima[],
     });
     const [bairroReconhecido, setBairroReconhecido] =
@@ -89,6 +97,20 @@ export default function Atendimento({
     const [carregandoArredores, setCarregandoArredores] = useState(false);
     const [ruas, setRuas] = useState<Rua[] | null>(null);
     const [avisoRuas, setAvisoRuas] = useState<string | null>(null);
+    const [trilha, setTrilha] = useState<Passo[]>([]);
+    // muda a cada chamado aberto: zera o estado interno dos campos
+    const [chamado, setChamado] = useState(0);
+
+    const registrar = (
+        passo: string,
+        digitado: string | null,
+        escolhido: string | null,
+        origem: string | null = null,
+    ) =>
+        setTrilha((t) => [
+            ...t.slice(-39),
+            { passo, digitado, escolhido, origem },
+        ]);
     const { lat, lng } = form.data;
     const ponto: [number, number] | null =
         lat !== null && lng !== null ? [lat, lng] : null;
@@ -117,13 +139,10 @@ export default function Atendimento({
             .then((a) => {
                 setArredores(a);
 
-                // Bairro em branco: preenche com o do mapa.
-                if (a.bairro) {
-                    form.setData((d) =>
-                        d.bairro.trim() === ''
-                            ? { ...d, bairro: a.bairro! }
-                            : d,
-                    );
+                // Bairro em branco: preenche com o do mapa (e registra que veio do mapa).
+                if (a.bairro && form.data.bairro.trim() === '') {
+                    form.setData('bairro', a.bairro);
+                    registrar('bairro_do_mapa', null, a.bairro, 'mapa');
                 }
             })
             .catch(() => setArredores(null))
@@ -138,12 +157,21 @@ export default function Atendimento({
         [],
     );
 
-    function escolherEndereco(l: Lugar) {
+    function escolherEndereco(l: Lugar, digitado: string, origem: string) {
+        const endereco =
+            [l.logradouro, l.numero].filter(Boolean).join(', ') || l.rotulo;
+        registrar(
+            'rua',
+            digitado,
+            `${endereco}${l.bairro ? ` (${l.bairro})` : ''}`,
+            origem,
+        );
         form.setData((d) => ({
             ...d,
-            endereco:
-                [l.logradouro, l.numero].filter(Boolean).join(', ') || l.rotulo,
-            bairro: l.bairro ?? d.bairro,
+            endereco,
+            // Nunca troca em silêncio o bairro que o solicitante disse: se a rua
+            // escolhida for de outro bairro, o quadro de conferência avisa.
+            bairro: d.bairro.trim() === '' ? (l.bairro ?? '') : d.bairro,
             lat: l.lat,
             lng: l.lng,
             localizado_por: 'endereco',
@@ -152,6 +180,12 @@ export default function Atendimento({
 
     // Rua reconhecida pelo solicitante na lista "é numa destas ruas?".
     function escolherRua(r: Rua) {
+        registrar(
+            'rua_proxima',
+            form.data.endereco || null,
+            `${r.nome}${r.bairro ? ` (${r.bairro})` : ''}`,
+            'catalogo',
+        );
         form.setData((d) => ({
             ...d,
             endereco: r.nome,
@@ -172,15 +206,39 @@ export default function Atendimento({
         );
     }
 
-    function enviar(e: FormEvent) {
-        e.preventDefault();
+    function abrir(abertura: 'normal' | 'ligacao_caiu') {
+        form.transform((d) => ({ ...d, abertura, trilha }));
         form.post(store.url(), {
             preserveScroll: true,
             onSuccess: () => {
                 form.reset();
                 setBairroReconhecido(null);
+                setTrilha([]);
+                setChamado((c) => c + 1);
             },
         });
+    }
+
+    function enviar(e: FormEvent) {
+        e.preventDefault();
+        abrir('normal');
+    }
+
+    // Enter confirma o campo, não abre o chamado; Ctrl/⌘+Enter abre.
+    function teclado(e: KeyboardEvent<HTMLFormElement>) {
+        if (e.key !== 'Enter') {
+            return;
+        }
+        if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            abrir('normal');
+
+            return;
+        }
+        const alvo = e.target as HTMLElement;
+        if (alvo.tagName === 'INPUT' || alvo.tagName === 'SELECT') {
+            e.preventDefault();
+        }
     }
 
     const erro = (chave: string) =>
@@ -193,6 +251,7 @@ export default function Atendimento({
             <div className="grid gap-4 xl:grid-cols-[500px_1fr]">
                 <form
                     onSubmit={enviar}
+                    onKeyDown={teclado}
                     className="space-y-3 rounded border border-neutral-200 bg-white p-4 shadow-sm"
                 >
                     <div>
@@ -235,20 +294,36 @@ export default function Atendimento({
                         </legend>
 
                         <CampoBairro
+                            key={`bairro${chamado}`}
                             valor={form.data.bairro}
                             erro={form.errors.bairro}
                             onMudar={(b) => form.setData('bairro', b)}
+                            onQuisDizer={(digitado, escolhido) =>
+                                registrar(
+                                    'bairro',
+                                    digitado,
+                                    escolhido,
+                                    'quis_dizer',
+                                )
+                            }
                             onReconhecer={setBairroReconhecido}
                         />
 
                         <PontoReferencia
+                            key={`referencia${chamado}`}
                             bairro={form.data.bairro}
                             textoReferencia={form.data.ponto_referencia}
                             onTextoReferencia={(t) =>
                                 form.setData('ponto_referencia', t)
                             }
                             ponto={ponto}
-                            onUsarLugar={(lat, lng, bairro) => {
+                            onUsarLugar={(lat, lng, bairro, nome, origem) => {
+                                registrar(
+                                    'referencia',
+                                    form.data.ponto_referencia || null,
+                                    `${nome}${bairro ? ` (${bairro})` : ''}`,
+                                    origem,
+                                );
                                 marcar(lat, lng, 'referencia');
                                 if (bairro && form.data.bairro.trim() === '') {
                                     form.setData('bairro', bairro);
@@ -258,6 +333,7 @@ export default function Atendimento({
                         />
 
                         <CampoEndereco
+                            key={`endereco${chamado}`}
                             valor={form.data.endereco}
                             bairro={form.data.bairro}
                             ponto={ponto}
@@ -402,6 +478,18 @@ export default function Atendimento({
                             : ponto
                               ? 'Abrir ocorrência'
                               : 'Abrir ocorrência sem local no mapa'}
+                        <span className="ml-2 font-normal normal-case">
+                            (Ctrl+Enter)
+                        </span>
+                    </button>
+                    <button
+                        type="button"
+                        disabled={form.processing}
+                        onClick={() => abrir('ligacao_caiu')}
+                        title="Abre só com o que já foi preenchido; a regulação liga de volta para o telefone."
+                        className="w-full rounded border border-neutral-400 bg-white py-1 text-[10px] font-bold text-black uppercase hover:bg-neutral-100 disabled:opacity-60"
+                    >
+                        Ligação caiu — abrir com o que tenho
                     </button>
                 </form>
 

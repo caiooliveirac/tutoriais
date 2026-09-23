@@ -98,6 +98,38 @@ test('o TARM abre a ocorrência só com a queixa e uma pista do local', function
 test('sem nenhuma pista do local, pede só uma — e diz qual', function () {
     $this->actingAs($this->tarm)->post('/tutoriais/atendimento/ocorrencias', [
         'cidade' => 'Salvador', 'queixa' => 'CAIU NA RUA', 'vitimas' => [['nome' => null]],
-    ])->assertSessionHasErrors(['endereco' => 'Informe pelo menos uma pista do local: endereço, bairro, ponto de referência ou um clique no mapa.'])
+    ])->assertSessionHasErrors(['endereco' => 'Informe pelo menos uma pista: telefone, endereço, bairro, ponto de referência ou um clique no mapa.'])
         ->assertSessionDoesntHaveErrors(['telefone', 'solicitante', 'bairro']);
+});
+
+test('ligação caiu: abre só com o telefone, sem queixa, e avisa para retornar', function () {
+    $this->actingAs($this->tarm)->post('/tutoriais/atendimento/ocorrencias', [
+        'cidade' => 'Salvador', 'telefone' => '(71) 98888-7777', 'abertura' => 'ligacao_caiu',
+        'vitimas' => [['nome' => null]],
+    ])->assertSessionHasNoErrors();
+
+    $o = Ocorrencia::with('eventos')->sole();
+    expect($o->queixa)->toBe('LIGAÇÃO CAIU — SEM QUEIXA')
+        ->and($o->eventos->sole()->descricao)->toContain('retornar');
+});
+
+test('no fluxo normal a queixa continua obrigatória, com mensagem que aponta a saída', function () {
+    $this->actingAs($this->tarm)->post('/tutoriais/atendimento/ocorrencias', [
+        'cidade' => 'Salvador', 'telefone' => '(71) 98888-7777', 'vitimas' => [['nome' => null]],
+    ])->assertSessionHasErrors(['queixa' => 'Informe a queixa — ou use "Ligação caiu" para abrir só com o que já tem.']);
+});
+
+test('a trilha "digitado × escolhido" vai para o evento de abertura', function () {
+    $this->actingAs($this->tarm)->post('/tutoriais/atendimento/ocorrencias', [
+        'cidade' => 'Salvador', 'queixa' => 'DOR', 'bairro' => 'Tororó', 'vitimas' => [['nome' => null]],
+        'trilha' => [
+            ['passo' => 'bairro', 'digitado' => 'tororo', 'escolhido' => 'Tororó', 'origem' => 'quis_dizer'],
+            ['passo' => 'rua', 'digitado' => 'amparo do tororro', 'escolhido' => 'Rua Amparo do Tororó (Tororó)', 'origem' => 'catalogo'],
+        ],
+    ])->assertSessionHasNoErrors();
+
+    $depois = Ocorrencia::sole()->eventos()->sole()->depois;
+    expect($depois['trilha'])->toHaveCount(2)
+        ->and($depois['trilha'][1]['digitado'])->toBe('amparo do tororro')
+        ->and($depois['dados'])->not->toHaveKey('trilha');
 });

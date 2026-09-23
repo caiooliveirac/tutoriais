@@ -28,7 +28,10 @@ class AbrirOcorrencia
             ? array_slice($this->estimativa->ate((float) $dados['lat'], (float) $dados['lng'])['unidades'], 0, 5)
             : null;
 
-        return DB::transaction(function () use ($tarm, $dados, $ip, $sugestao) {
+        $caiu = ($dados['abertura'] ?? null) === 'ligacao_caiu';
+        $dados['queixa'] = trim((string) ($dados['queixa'] ?? '')) ?: 'LIGAÇÃO CAIU — SEM QUEIXA';
+
+        return DB::transaction(function () use ($tarm, $dados, $ip, $sugestao, $caiu) {
             $agora = now();
             $ocorrencia = Ocorrencia::create([
                 'protocolo' => $this->proximoProtocolo(),
@@ -46,9 +49,10 @@ class AbrirOcorrencia
 
             $ocorrencia->eventos()->create([
                 'tipo' => TipoEvento::Aberta,
-                'descricao' => 'Chamado aberto',
+                'descricao' => $caiu ? 'Chamado aberto — ligação caiu, retornar para o telefone' : 'Chamado aberto',
                 'depois' => [
-                    'dados' => collect($dados)->except('vitimas')->all(),
+                    'dados' => collect($dados)->except(['vitimas', 'trilha'])->all(),
+                    'trilha' => $dados['trilha'] ?? [],
                     'vitimas' => $vitimas,
                     'sugestao' => $sugestao === null ? null : array_map(
                         fn (array $u) => collect($u)->only(['codigo', 'tipo', 'base', 'origem', 'minutos', 'km'])->all(),

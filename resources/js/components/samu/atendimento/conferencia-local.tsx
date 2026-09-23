@@ -11,7 +11,13 @@ type Props = {
     textoReferencia: string;
     onTextoReferencia: (t: string) => void;
     ponto: [number, number] | null;
-    onUsarLugar: (lat: number, lng: number, bairro: string | null) => void;
+    onUsarLugar: (
+        lat: number,
+        lng: number,
+        bairro: string | null,
+        nome: string,
+        origem: string,
+    ) => void;
     erro?: string;
 };
 
@@ -116,7 +122,13 @@ export function PontoReferencia(p: Props) {
                                 type="button"
                                 className={botaoSecundario}
                                 onClick={() => {
-                                    p.onUsarLugar(a.lat, a.lng, a.bairro);
+                                    p.onUsarLugar(
+                                        a.lat,
+                                        a.lng,
+                                        a.bairro,
+                                        a.nome,
+                                        a.origem,
+                                    );
                                     setAchados(null);
                                 }}
                             >

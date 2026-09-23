@@ -8,6 +8,7 @@ type Props = {
     valor: string;
     erro?: string;
     onMudar: (bairro: string) => void;
+    onQuisDizer: (digitado: string, escolhido: string) => void;
     // bairro reconhecido: o mapa vai até ele e as buscas passam a preferir a região
     onReconhecer: (b: BairroSugerido | null) => void;
 };
@@ -23,7 +24,13 @@ const normalizar = (s: string) =>
  * Primeiro campo do local. Aceita o bairro escrito de ouvido e oferece
  * "Quis dizer: Tororó?" (casamento por som com os bairros de Salvador).
  */
-export function CampoBairro({ valor, erro, onMudar, onReconhecer }: Props) {
+export function CampoBairro({
+    valor,
+    erro,
+    onMudar,
+    onQuisDizer,
+    onReconhecer,
+}: Props) {
     const [parecidos, setParecidos] = useState<BairroSugerido[]>([]);
 
     useEffect(() => {
@@ -73,7 +80,10 @@ export function CampoBairro({ valor, erro, onMudar, onReconhecer }: Props) {
                         <button
                             key={p.nome}
                             type="button"
-                            onClick={() => onMudar(p.nome)}
+                            onClick={() => {
+                                onQuisDizer(valor, p.nome);
+                                onMudar(p.nome);
+                            }}
                             className="rounded bg-yellow-300 px-1.5 font-bold text-black hover:bg-yellow-400"
                         >
                             {p.nome}
