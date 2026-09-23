@@ -53,6 +53,9 @@ transporte, chegada ao destino) entram quando a tela de despacho existir.
   mecânico (VTR baixada), piora do quadro, QTA. Evasão, pane e QTA desvinculam a
   unidade (círculo vermelho com X); toda intercorrência ativa mostra o asterisco
   vermelho até alguém dar ciência.
+- **Frota**: 16 bases e ~70 unidades oficiais de Salvador (lista do
+  `ChecagemdeBases`), com coordenada OSM por base; unidades desativadas entram
+  como baixadas. Motolâncias ML01–ML03 são fictícias. Ver `docs/API.md`.
 - **Ficha travada**: ocorrência aberta por outro usuário (cadeado, não abre).
 - **Sinais vitais**: PA, FC, FR, temperatura, SpO2, HGT, Glasgow.
 

@@ -35,4 +35,22 @@ return [
         ],
     ],
 
+    // Geocodificação de endereços (tela do TARM). Política do OSM: até 1 req/s,
+    // User-Agent identificável; resultados ficam em cache.
+    'nominatim' => [
+        'url' => env('NOMINATIM_URL', 'https://nominatim.openstreetmap.org'),
+        'user_agent' => env('NOMINATIM_USER_AGENT', 'samu-mais/1.0 (+https://mnrs.com.br/tutoriais)'),
+    ],
+
+    // Tempo de deslocamento por rua. O servidor público do OSRM é só para
+    // demonstração; produção deve apontar para um OSRM próprio (ver docs/API.md).
+    'osrm' => [
+        'url' => env('OSRM_URL', 'https://router.project-osrm.org'),
+    ],
+
+    // Token das integrações que enviam posição das unidades (AVL/GPS).
+    'rastreamento' => [
+        'token' => env('RASTREAMENTO_TOKEN'),
+    ],
+
 ];

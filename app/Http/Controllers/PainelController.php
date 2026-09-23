@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\Area;
 use App\Enums\StatusOcorrencia;
 use App\Http\Resources\LinhaOcorrencia;
+use App\Models\Base;
 use App\Models\Ocorrencia;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -29,7 +30,10 @@ class PainelController extends Controller
             Area::Bi => [],
         };
 
-        return Inertia::render('area', [
+        $pagina = $area === Area::Atendimento ? 'atendimento' : 'area';
+
+        return Inertia::render($pagina, [
+            'bases' => fn () => $area === Area::Atendimento ? Base::orderBy('nome')->get(['nome', 'lat', 'lng']) : [],
             'slug' => $area->value,
             'titulo' => $area->label(),
             'tabelas' => collect($tabelas)->mapWithKeys(fn (string $tabela) => [

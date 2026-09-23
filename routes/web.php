@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\Area;
+use App\Http\Controllers\AtendimentoController;
 use App\Http\Controllers\PainelController;
 use Illuminate\Support\Facades\Route;
 
@@ -18,6 +19,14 @@ Route::prefix('tutoriais')->group(function () {
                 ->middleware("area:{$area->value}")
                 ->name("area.{$area->value}");
         }
+
+        Route::middleware('area:atendimento')->prefix('atendimento')->name('atendimento.')->group(function () {
+            Route::get('geocodificar', [AtendimentoController::class, 'geocodificar'])
+                ->middleware('throttle:60,1')->name('geocodificar');
+            Route::get('estimativas', [AtendimentoController::class, 'estimativas'])
+                ->middleware('throttle:60,1')->name('estimativas');
+            Route::post('ocorrencias', [AtendimentoController::class, 'store'])->name('ocorrencias.store');
+        });
     });
 
     require __DIR__.'/settings.php';
