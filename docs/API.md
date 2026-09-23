@@ -124,8 +124,12 @@ desenhadas por cima de qualquer um dos mapas.
 
 ## Coordenadas das bases
 
-`database/seeders/CatalogoSeeder.php`. Bases e códigos vêm da lista oficial
-(`ChecagemdeBases/src/data/bases.ts`); coordenadas do OpenStreetMap, com a
-fonte gravada em `bases.fonte_coordenada`. A maioria é o **centro do bairro**;
-`JORGE AMADO` (Unijorge) e `PITUBA ARENA` (Arena Aquática) são suposições a
-confirmar. Coordenada exata da porta da base melhora a estimativa em 1–3 min.
+`database/seeders/CatalogoSeeder.php`. Bases e códigos: lista oficial
+(`ChecagemdeBases/src/data/bases.ts`). Coordenadas: as mesmas que o
+ChecagemdeBases plota no mapa (`src/data/coordenadas.ts`, branch
+`claude/mapa-bases-alertas-equipes-393de6`, commit `678a92d`): **13 exatas**
+(10 da geofence de check-in do `taximetro-digital` e 3 ancoradas em POI do OSM)
+e **3 aproximadas** (Valéria, Boca do Rio 12º Centro, Pituba Arena). A origem
+de cada uma fica em `bases.fonte_coordenada`.
+
+Chaves do Google: passo a passo em `docs/GOOGLE-MAPS.md`.
