@@ -5,6 +5,7 @@ namespace App\Services\Mapas;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use RuntimeException;
 
 /**
  * Google Maps Platform, lado do servidor (chave GOOGLE_MAPS_API_KEY):
@@ -79,11 +80,18 @@ class GoogleMaps
      */
     public function enderecoDoPonto(float $lat, float $lng): array
     {
-        $r = $this->http()->get('https://maps.googleapis.com/maps/api/geocode/json', [
+        $resposta = $this->http()->get('https://maps.googleapis.com/maps/api/geocode/json', [
             'latlng' => "{$lat},{$lng}",
             'language' => 'pt-BR',
             'key' => config('services.google_maps.chave_servidor'),
-        ])->throw()->json('results', []);
+        ])->throw()->json();
+
+        // A Geocoding API responde 200 mesmo recusando (REQUEST_DENIED etc.).
+        $status = $resposta['status'] ?? 'SEM_STATUS';
+        if (! in_array($status, ['OK', 'ZERO_RESULTS'], true)) {
+            throw new RuntimeException("Geocoding API: {$status} ".($resposta['error_message'] ?? ''));
+        }
+        $r = $resposta['results'] ?? [];
 
         $bairro = null;
         foreach ($r as $resultado) {

@@ -231,3 +231,17 @@ test('API fechada quando não há token configurado', function () {
 
     $this->getJson('/tutoriais/api/v1/estimativas?lat=-12.9&lng=-38.5', ['Authorization' => 'Bearer '])->assertUnauthorized();
 });
+
+test('Google recusando a geocodificação vira aviso, sem derrubar a conferência', function () {
+    config(['services.google_maps.chave_servidor' => 'chave-servidor', 'services.google_maps.chave_navegador' => 'chave-navegador']);
+    Http::fake([
+        'maps.googleapis.com/maps/api/geocode/*' => Http::response(['status' => 'REQUEST_DENIED', 'error_message' => 'This API is not activated']),
+        'places.googleapis.com/v1/places:searchNearby' => Http::response(['places' => []]),
+    ]);
+
+    $r = $this->actingAs($this->tarm)->getJson('/tutoriais/atendimento/arredores?lat=-12.979&lng=-38.505')->assertOk()->json();
+
+    expect($r['avisos'])->toContain('Endereço do ponto indisponível')
+        ->and($r['bairro'])->toBe('Nazaré') // cai para o bairro mais próximo
+        ->and($r['ruas'])->not->toBeEmpty();
+});
