@@ -7,6 +7,7 @@ use App\Enums\StatusOcorrencia;
 use App\Http\Resources\LinhaOcorrencia;
 use App\Models\Base;
 use App\Models\Ocorrencia;
+use App\Services\Mapas\Localizador;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -18,7 +19,7 @@ use InvalidArgumentException;
  */
 class PainelController extends Controller
 {
-    public function __invoke(Request $request, string $area): Response
+    public function __invoke(Request $request, string $area, Localizador $localizador): Response
     {
         $area = Area::from($area);
 
@@ -34,6 +35,11 @@ class PainelController extends Controller
 
         return Inertia::render($pagina, [
             'bases' => fn () => $area === Area::Atendimento ? Base::orderBy('nome')->get(['nome', 'lat', 'lng']) : [],
+            'mapas' => fn () => $area === Area::Atendimento ? [
+                'provedor' => $localizador->provedor(),
+                // chave do navegador: pública por natureza, restrita por referrer no Google
+                'chave_navegador' => $localizador->provedor() === 'google' ? config('services.google_maps.chave_navegador') : null,
+            ] : null,
             'slug' => $area->value,
             'titulo' => $area->label(),
             'tabelas' => collect($tabelas)->mapWithKeys(fn (string $tabela) => [

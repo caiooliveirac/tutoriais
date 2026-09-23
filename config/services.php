@@ -48,6 +48,22 @@ return [
         'url' => env('OSRM_URL', 'https://router.project-osrm.org'),
     ],
 
+    // Ruas e pontos de referência em volta do local (OpenStreetMap).
+    'overpass' => [
+        'url' => env('OVERPASS_URL', 'https://overpass-api.de/api/interpreter'),
+    ],
+
+    // Google Maps Platform. Com as duas chaves, a tela do TARM usa Google
+    // (autocompletar tolerante a erro, lugares próximos, mapa Google). Os
+    // termos do Google proíbem mostrar esses resultados sobre mapa não-Google,
+    // então sem a chave do navegador tudo cai para OpenStreetMap.
+    //   servidor: Places API (New) + Geocoding API, restrita por IP
+    //   navegador: Maps JavaScript API, restrita por referrer (mnrs.com.br/*)
+    'google_maps' => [
+        'chave_servidor' => env('GOOGLE_MAPS_API_KEY'),
+        'chave_navegador' => env('GOOGLE_MAPS_BROWSER_KEY'),
+    ],
+
     // Token das integrações que enviam posição das unidades (AVL/GPS).
     'rastreamento' => [
         'token' => env('RASTREAMENTO_TOKEN'),

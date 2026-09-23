@@ -21,10 +21,14 @@ Route::prefix('tutoriais')->group(function () {
         }
 
         Route::middleware('area:atendimento')->prefix('atendimento')->name('atendimento.')->group(function () {
-            Route::get('geocodificar', [AtendimentoController::class, 'geocodificar'])
-                ->middleware('throttle:60,1')->name('geocodificar');
-            Route::get('estimativas', [AtendimentoController::class, 'estimativas'])
-                ->middleware('throttle:60,1')->name('estimativas');
+            Route::middleware('throttle:180,1')->group(function () {
+                Route::get('sugerir', [AtendimentoController::class, 'sugerir'])->name('sugerir');
+                Route::get('lugar', [AtendimentoController::class, 'lugar'])->name('lugar');
+                Route::get('arredores', [AtendimentoController::class, 'arredores'])->name('arredores');
+                Route::get('referencia', [AtendimentoController::class, 'referencia'])->name('referencia');
+                Route::get('bairros', [AtendimentoController::class, 'bairros'])->name('bairros');
+                Route::get('estimativas', [AtendimentoController::class, 'estimativas'])->name('estimativas');
+            });
             Route::post('ocorrencias', [AtendimentoController::class, 'store'])->name('ocorrencias.store');
         });
     });

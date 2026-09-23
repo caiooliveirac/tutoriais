@@ -86,19 +86,41 @@ Resposta:
 
 ## Endpoints internos (sessão do TARM, usados pela tela de Atendimento)
 
-| Método | Caminho                                        | Uso                                                                                                       |
-| ------ | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| GET    | `/tutoriais/atendimento/geocodificar?q=`       | endereço → lista de `{rotulo, logradouro, numero, bairro, lat, lng}` (Nominatim, só Salvador, cache 24 h) |
-| GET    | `/tutoriais/atendimento/estimativas?lat=&lng=` | mesma resposta de `/api/v1/estimativas`                                                                   |
-| POST   | `/tutoriais/atendimento/ocorrencias`           | abre a ocorrência; grava no evento de abertura as 5 unidades sugeridas naquele instante                   |
+Pensados para quem digita errado: o endereço aceita escrita "de ouvido", o
+bairro é corrigido por som, o local pode ser achado pelo ponto de referência,
+e depois de marcado o sistema mostra o que há em volta para o TARM confirmar
+com o solicitante.
+
+| Método | Caminho                                          | Uso                                                                                                                                       |
+| ------ | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/tutoriais/atendimento/sugerir?q=&sessao=`      | autocompletar do endereço. Google: `[{id, principal, secundario}]` (tolera erro de digitação); OSM: os mesmos campos + `lat, lng, bairro` |
+| GET    | `/tutoriais/atendimento/lugar?id=&sessao=`       | (só Google) detalhe da sugestão: `{rotulo, logradouro, numero, bairro, lat, lng}`                                                         |
+| GET    | `/tutoriais/atendimento/arredores?lat=&lng=`     | conferência: `{endereco, bairro, ruas: [{nome, metros, trechos}], referencias: [{nome, tipo, lat, lng, metros}], avisos}`                 |
+| GET    | `/tutoriais/atendimento/referencia?q=&lat=&lng=` | acha um lugar pelo nome ("mercado Atakarejo", "igreja universal") perto do ponto, ou em Salvador                                          |
+| GET    | `/tutoriais/atendimento/bairros?q=`              | "quis dizer": bairros de Salvador parecidos pelo som (`rio vermeio` → Rio Vermelho)                                                       |
+| GET    | `/tutoriais/atendimento/estimativas?lat=&lng=`   | mesma resposta de `/api/v1/estimativas`                                                                                                   |
+| POST   | `/tutoriais/atendimento/ocorrencias`             | abre a ocorrência; grava `localizado_por` (endereco/referencia/mapa) e as 5 unidades sugeridas no evento de abertura                      |
+
+`sessao` é um UUID gerado pela tela a cada chamado: o Google cobra as
+digitações do autocompletar + o detalhe como uma sessão só.
 
 ## Serviços externos e produção
 
-| Serviço        | Variável                                | Padrão                      | Observação                                                                                                                                                                                                              |
-| -------------- | --------------------------------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Geocodificação | `NOMINATIM_URL`, `NOMINATIM_USER_AGENT` | nominatim.openstreetmap.org | política de uso: 1 req/s, User-Agent identificável. A tela espera 700 ms de pausa na digitação e o servidor guarda cache.                                                                                               |
-| Rotas          | `OSRM_URL`                              | router.project-osrm.org     | servidor **de demonstração**. Para produção: OSRM próprio em container com o recorte do Nordeste do Geofabrik (`osrm/osrm-backend`), ou trocar `App\Services\Roteamento` por Google Distance Matrix se quiser trânsito. |
-| Token da API   | `RASTREAMENTO_TOKEN`                    | vazio (API fechada)         | gerar com `openssl rand -hex 32`.                                                                                                                                                                                       |
+| Serviço                | Variável                                | Padrão                      | Observação                                                                                                                                                                                        |
+| ---------------------- | --------------------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Google (servidor)      | `GOOGLE_MAPS_API_KEY`                   | vazio                       | habilitar **Places API (New)** e **Geocoding API**; restringir a chave por IP do servidor.                                                                                                        |
+| Google (navegador)     | `GOOGLE_MAPS_BROWSER_KEY`               | vazio                       | habilitar **Maps JavaScript API**; restringir por referrer (`https://mnrs.com.br/tutoriais/*`, `http://localhost:8000/*`, `http://localhost:4099/*`). Vai para a página (é pública por natureza). |
+| Geocodificação OSM     | `NOMINATIM_URL`, `NOMINATIM_USER_AGENT` | nominatim.openstreetmap.org | usada sem Google. 1 req/s, User-Agent identificável; cache de 24 h.                                                                                                                               |
+| Ruas e referências OSM | `OVERPASS_URL`                          | overpass-api.de             | ruas próximas com traçado (sempre) e referências (sem Google).                                                                                                                                    |
+| Rotas                  | `OSRM_URL`                              | router.project-osrm.org     | servidor **de demonstração**. Produção: OSRM próprio em container com o recorte do Nordeste (Geofabrik, `osrm/osrm-backend`), ou Google Routes se quiser trânsito.                                |
+| Token da API           | `RASTREAMENTO_TOKEN`                    | vazio (API fechada)         | gerar com `openssl rand -hex 32`.                                                                                                                                                                 |
+
+**Por que duas chaves e "tudo ou nada":** os termos do Google Maps Platform
+proíbem exibir resultados do Google (lugares, endereços, coordenadas
+geocodificadas) sobre mapa que não seja Google. Com as duas chaves, a tela usa
+Google em tudo, inclusive o mapa. Faltando a do navegador, a tela inteira usa
+OpenStreetMap + Leaflet. As ruas próximas vêm sempre do OSM (dado aberto, ODbL),
+desenhadas por cima de qualquer um dos mapas.
 
 ## Coordenadas das bases
 

@@ -24,10 +24,21 @@ beforeEach(function () {
                 'distances' => array_map(fn ($i) => [500.0 * ($i + 1)], range(0, $n - 1)),
             ]);
         },
-        'nominatim.openstreetmap.org/*' => Http::response([[
+        'nominatim.openstreetmap.org/search*' => Http::response([[
             'display_name' => 'Rua do Tororó, Tororó, Salvador, Bahia, Brasil',
-            'lat' => '-12.9790', 'lon' => '-38.5050',
+            'lat' => '-12.9790', 'lon' => '-38.5050', 'osm_type' => 'way', 'osm_id' => 1,
             'address' => ['road' => 'Rua do Tororó', 'suburb' => 'Tororó'],
+        ]]),
+        'nominatim.openstreetmap.org/reverse*' => Http::response([
+            'display_name' => 'Rua do Tororó, Tororó, Salvador, Bahia',
+            'address' => ['suburb' => 'Tororó'],
+        ]),
+        'overpass-api.de/*' => Http::response(['elements' => [
+            ['type' => 'way', 'tags' => ['highway' => 'residential', 'name' => 'Rua do Tororó'],
+                'geometry' => [['lat' => -12.9791, 'lon' => -38.5051], ['lat' => -12.9795, 'lon' => -38.5055]]],
+            ['type' => 'way', 'tags' => ['highway' => 'residential', 'name' => 'Ladeira da Fonte'],
+                'geometry' => [['lat' => -12.9810, 'lon' => -38.5060]]],
+            ['type' => 'node', 'lat' => -12.9792, 'lon' => -38.5049, 'tags' => ['name' => 'Farmácia do Povo', 'amenity' => 'pharmacy']],
         ]]),
     ]);
 });
@@ -85,11 +96,92 @@ test('só quem tem perfil de TARM abre ocorrência', function () {
     $this->actingAs($medico)->post('/tutoriais/atendimento/ocorrencias', chamado())->assertForbidden();
 });
 
-test('busca de endereço devolve coordenadas e bairro', function () {
-    $this->actingAs($this->tarm)->getJson('/tutoriais/atendimento/geocodificar?q=Rua do Tororó 18')
+test('sem chaves do Google, sugestões vêm do OSM já com coordenada', function () {
+    $this->actingAs($this->tarm)->getJson('/tutoriais/atendimento/sugerir?q=Rua do Tororó 18')
         ->assertOk()
+        ->assertJsonPath('0.principal', 'Rua do Tororó')
         ->assertJsonPath('0.bairro', 'Tororó')
         ->assertJsonPath('0.lat', -12.979);
+});
+
+test('arredores trazem bairro, ruas com traçado e referências por distância', function () {
+    $r = $this->actingAs($this->tarm)->getJson('/tutoriais/atendimento/arredores?lat=-12.979&lng=-38.505')
+        ->assertOk()->json();
+
+    expect($r['bairro'])->toBe('Tororó')
+        ->and(array_column($r['ruas'], 'nome'))->toBe(['Rua do Tororó', 'Ladeira da Fonte'])
+        ->and($r['ruas'][0]['trechos'][0])->toHaveCount(2)
+        ->and($r['referencias'][0]['nome'])->toBe('Farmácia do Povo')
+        ->and($r['avisos'])->toBe([]);
+});
+
+test('bairro digitado de ouvido é reconhecido', function () {
+    $this->actingAs($this->tarm)->getJson('/tutoriais/atendimento/bairros?q=rio vermeio')
+        ->assertOk()->assertJsonPath('0.nome', 'Rio Vermelho');
+});
+
+test('com as chaves do Google, a tela usa Google para sugerir, detalhar e achar referências', function () {
+    config(['services.google_maps.chave_servidor' => 'chave-servidor', 'services.google_maps.chave_navegador' => 'chave-navegador']);
+    Http::fake([
+        'places.googleapis.com/v1/places:autocomplete' => Http::response(['suggestions' => [
+            ['placePrediction' => ['placeId' => 'ChIJ-tororo', 'text' => ['text' => 'Rua do Tororó'],
+                'structuredFormat' => ['mainText' => ['text' => 'Rua do Tororó'], 'secondaryText' => ['text' => 'Tororó, Salvador - BA']]]],
+        ]]),
+        'places.googleapis.com/v1/places/ChIJ-tororo*' => Http::response([
+            'formattedAddress' => 'Rua do Tororó, 18 - Tororó, Salvador - BA',
+            'location' => ['latitude' => -12.979, 'longitude' => -38.505],
+            'addressComponents' => [
+                ['longText' => 'Rua do Tororó', 'types' => ['route']],
+                ['longText' => '18', 'types' => ['street_number']],
+                ['longText' => 'Tororó', 'types' => ['sublocality_level_1', 'sublocality']],
+            ],
+        ]),
+        'maps.googleapis.com/maps/api/geocode/*' => Http::response(['results' => [[
+            'formatted_address' => 'Rua do Tororó, 18 - Tororó',
+            'address_components' => [['long_name' => 'Tororó', 'types' => ['sublocality_level_1', 'sublocality']]],
+        ]]]),
+        'places.googleapis.com/v1/places:searchNearby' => Http::response(['places' => [
+            ['displayName' => ['text' => 'Igreja Batista do Tororó'], 'primaryTypeDisplayName' => ['text' => 'Igreja'],
+                'location' => ['latitude' => -12.9795, 'longitude' => -38.5052]],
+        ]]),
+        'places.googleapis.com/v1/places:searchText' => Http::response(['places' => [
+            ['displayName' => ['text' => 'Hospital Geral Roberto Santos'], 'formattedAddress' => 'Estr. do Saboeiro, Cabula',
+                'location' => ['latitude' => -12.9566, 'longitude' => -38.4588]],
+        ]]),
+    ]);
+
+    $this->actingAs($this->tarm)->get('/tutoriais/atendimento')
+        ->assertInertia(fn ($p) => $p->where('mapas.provedor', 'google')->where('mapas.chave_navegador', 'chave-navegador'));
+
+    $this->actingAs($this->tarm)->getJson('/tutoriais/atendimento/sugerir?q=rua do tororo&sessao=abc')
+        ->assertOk()->assertJsonPath('0.id', 'ChIJ-tororo')->assertJsonMissingPath('0.lat');
+
+    $this->actingAs($this->tarm)->getJson('/tutoriais/atendimento/lugar?id=ChIJ-tororo&sessao=abc')
+        ->assertOk()->assertJson(['logradouro' => 'Rua do Tororó', 'numero' => '18', 'bairro' => 'Tororó', 'lat' => -12.979]);
+
+    $r = $this->actingAs($this->tarm)->getJson('/tutoriais/atendimento/arredores?lat=-12.979&lng=-38.505')->json();
+    expect($r['referencias'][0]['nome'])->toBe('Igreja Batista do Tororó')
+        ->and($r['ruas'][0]['nome'])->toBe('Rua do Tororó'); // ruas continuam do OSM
+
+    $this->actingAs($this->tarm)->getJson('/tutoriais/atendimento/referencia?q=hospital roberto santos')
+        ->assertOk()->assertJsonPath('0.nome', 'Hospital Geral Roberto Santos');
+
+    Http::assertSent(fn ($req) => $req->hasHeader('X-Goog-Api-Key', 'chave-servidor'));
+});
+
+test('só a chave do servidor não basta: sem mapa Google, fica tudo em OSM', function () {
+    config(['services.google_maps.chave_servidor' => 'chave-servidor', 'services.google_maps.chave_navegador' => null]);
+
+    $this->actingAs($this->tarm)->get('/tutoriais/atendimento')
+        ->assertInertia(fn ($p) => $p->where('mapas.provedor', 'osm')->where('mapas.chave_navegador', null));
+});
+
+test('falha do serviço de endereço vira aviso, não erro', function () {
+    config(['services.nominatim.url' => 'https://nominatim-fora.test']);
+    Http::fake(['nominatim-fora.test/*' => Http::response(null, 500)]);
+
+    $this->actingAs($this->tarm)->getJson('/tutoriais/atendimento/sugerir?q=rua qualquer')
+        ->assertStatus(503)->assertJsonPath('message', 'Busca de endereço indisponível; marque o local no mapa.');
 });
 
 test('estimativa ordena unidades pelo tempo e cai para linha reta sem OSRM', function () {

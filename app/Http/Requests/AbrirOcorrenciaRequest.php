@@ -21,6 +21,8 @@ class AbrirOcorrenciaRequest extends FormRequest
             'queixa' => ['required', 'string', 'max:200'],
             'lat' => ['nullable', 'numeric', 'between:-13.2,-12.6', 'required_with:lng'],
             'lng' => ['nullable', 'numeric', 'between:-38.8,-38.1', 'required_with:lat'],
+            // como o TARM chegou ao ponto: endereço, ponto de referência ou clique no mapa
+            'localizado_por' => ['nullable', 'in:endereco,referencia,mapa'],
             'vitimas' => ['required', 'array', 'min:1', 'max:20'],
             'vitimas.*.nome' => ['nullable', 'string', 'max:120'],
             'vitimas.*.idade' => ['nullable', 'integer', 'between:0,130'],

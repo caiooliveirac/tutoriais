@@ -42,11 +42,51 @@ export type Estimativa = {
     }[];
 };
 
-export type EnderecoEncontrado = {
+export type Sugestao = {
+    id: string;
+    principal: string;
+    secundario: string;
+    // OSM já traz; Google precisa de /lugar
+    lat?: number;
+    lng?: number;
+    bairro?: string | null;
+    logradouro?: string | null;
+    numero?: string | null;
+};
+
+export type Lugar = {
     rotulo: string;
     logradouro: string | null;
     numero: string | null;
     bairro: string | null;
     lat: number;
     lng: number;
+};
+
+export type Referencia = {
+    nome: string;
+    tipo: string;
+    lat: number;
+    lng: number;
+    metros: number;
+};
+
+export type Arredores = {
+    endereco: string | null;
+    bairro: string | null;
+    ruas: { nome: string; metros: number; trechos: [number, number][][] }[];
+    referencias: Referencia[];
+    avisos: string[];
+};
+
+export type LugarEncontrado = {
+    nome: string;
+    endereco: string;
+    lat: number;
+    lng: number;
+};
+
+export type ConfigMapas = {
+    provedor: 'google' | 'osm';
+    chave_navegador: string | null;
 };
